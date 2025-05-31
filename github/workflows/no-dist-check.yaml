@@ -1,0 +1,25 @@
+name: Prevent dist folder commit
+
+on:
+  push:
+    paths:
+      - "apps/server/dist/**"
+  pull_request:
+    paths:
+      - "apps/server/dist/**"
+
+jobs:
+  check-dist-folder:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Check for dist folder
+        run: |
+          if git ls-files --error-unmatch apps/server/dist/* > /dev/null 2>&1; then
+            echo "❌ ERROR: dist/ files are committed! Please remove them."
+            exit 1
+          else
+            echo "✅ No dist/ files committed."
+          fi
