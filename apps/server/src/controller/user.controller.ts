@@ -2,9 +2,7 @@ import { PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 const client = new PrismaClient();
-// export async function signin() {
-//   const { userm };
-// }
+
 export async function signup(req: Request, res: Response) {
   const { firstname, lastname, email, password } = req.body;
   if (!firstname || !lastname || !email || !password) {
