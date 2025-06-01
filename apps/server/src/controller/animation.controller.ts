@@ -19,7 +19,9 @@ export async function createScenes(req: Request, res: Response) {
         },
         {
           role: "user",
-          content: `Generate Manim code for the following prompt: "${prompt}". Output a full class-based Manim script for a simple animation without any comments.`,
+          content: `Generate a modular Manim script for the following prompt: "${prompt}". 
+Output multiple class-based scene definitions, each with a descriptive name and simple animations illustrating parts of the topic. 
+Do not include any comments. Output the full Python script with import statements and multiple scene classes.`,
         },
       ],
       max_tokens: 1500,
@@ -27,13 +29,13 @@ export async function createScenes(req: Request, res: Response) {
 
     const rawContent = response.choices[0].message.content || "";
     const manimCode = rawContent
-      .replace(/^\s*```(?:python)?\s*/, "") // Remove ``` or ```python + possible spaces/newlines at start
-      .replace(/\s*```[\s\r\n]*$/, "") // Remove ``` + possible trailing spaces/newlines at end
+      .replace(/^\s*```(?:python)?\s*/, "") // Remove ``` or ```python + spaces/newlines at start
+      .replace(/\s*```[\s\r\n]*$/, "") // Remove trailing ```
       .trim();
 
     console.log("Generated Manim Code:", manimCode);
 
-    const renderResult = await runManimCode(manimCode!);
+    const renderResult = await runManimCode(manimCode);
 
     res.status(200).json({ message: "Rendered", output: renderResult });
   } catch (error) {
