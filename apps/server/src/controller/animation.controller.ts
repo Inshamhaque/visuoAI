@@ -21,7 +21,8 @@ export async function createScenes(req: Request, res: Response) {
           role: "user",
           content: `Generate a modular Manim script for the following prompt: "${prompt}". 
 Output multiple class-based scene definitions, each with a descriptive name and simple animations illustrating parts of the topic. 
-Do not include any comments. Output the full Python script with import statements and multiple scene classes.`,
+Do not include any comments. Output the full Python script with import statements and multiple scene classes.Each scene should  be 
+at least of 15 seconds long and include at least 3 different animations.`,
         },
       ],
       max_tokens: 1500,
