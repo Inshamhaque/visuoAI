@@ -43,7 +43,7 @@ export async function createScenes(req: Request, res: Response) {
     5. Always end each scene with self.wait(2)
     6. Do not use: ParametricSurface, ThreeDScene, MovingCameraScene, or any 3D objects
     7. Keep animations simple and working
-    8. Generate exactly 3-4 scene classes
+    8. Generate exactly 5-6 scene classes
     9. NEVER use GrowFromCenter or GrowFromPoint - use Create or FadeIn instead
     10. NEVER use ShowIncreasingSubsets - use Create instead`,
         },

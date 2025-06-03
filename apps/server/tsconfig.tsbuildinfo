@@ -1,1 +1,1 @@
-{"root":["./src/index.ts","./src/controller/animation.controller.ts","./src/controller/user.controller.ts","./src/routes/animation.routes.ts","./src/routes/user.routes.ts","./src/services/manimEngine.ts"],"version":"5.8.3"}
+{"root":["./src/index.ts","./src/controller/animation.controller.ts","./src/controller/user.controller.ts","./src/middlewares/auth.ts","./src/routes/animation.routes.ts","./src/routes/user.routes.ts","./src/services/manimEngine.ts"],"version":"5.8.3"}
