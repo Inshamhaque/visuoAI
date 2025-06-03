@@ -15,29 +15,48 @@ const s3 = new AWS.S3({
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
 });
 
+interface UploadedVideo {
+  sceneName: string;
+  url: string;
+  key: string;
+  order: number;
+}
+
 export async function createScenes(req: Request, res: Response) {
   const { prompt } = req.body;
   if (!prompt) return res.status(400).json({ error: "Prompt is required" });
 
   try {
     // Step 1: Generate Manim Code from OpenAI
+    console.log("Generating Manim code for prompt:", prompt);
+
     const response = await client.chat.completions.create({
       model: "gpt-4o",
       messages: [
         {
           role: "system",
-          content:
-            "You are a helpful assistant that generates modular Manim code scenes.",
+          content: `You are a helpful assistant that generates Manim code. Follow these rules strictly:
+    1. Only use basic Manim classes: Scene, Circle, Square, Triangle, Rectangle, Text, Axes, Line, Arrow, Dot
+    2. Only use these animations: Create, Write, Transform, FadeIn, FadeOut, DrawBorderThenFill, ShowCreation
+    3. Always use 'from manim import *' as the first line
+    4. Each scene should have exactly one construct(self) method
+    5. Always end each scene with self.wait(2)
+    6. Do not use: ParametricSurface, ThreeDScene, MovingCameraScene, or any 3D objects
+    7. Keep animations simple and working
+    8. Generate exactly 3-4 scene classes
+    9. NEVER use GrowFromCenter or GrowFromPoint - use Create or FadeIn instead
+    10. NEVER use ShowIncreasingSubsets - use Create instead`,
         },
         {
           role: "user",
-          content: `Generate a modular Manim script for the following prompt: "${prompt}". 
-Output multiple class-based scene definitions, each with a descriptive name and simple animations illustrating parts of the topic. 
-Do not include any comments. Output the full Python script with import statements and multiple scene classes. Each scene should be 
-at least of 15 seconds long and include at least 3 different animations.`,
+          content: `Generate a modular Manim script for the following prompt: "${prompt}".
+Create exactly 3-5 scene classes, each with a descriptive name and simple animations illustrating different parts of the topic.
+Do not include any comments. Output the full Python script with import statements and multiple scene classes. 
+Each scene should be at least 10 seconds long and include at least 2-3 different animations.
+Make sure each class name is unique and descriptive.`,
         },
       ],
-      max_tokens: 1500,
+      max_tokens: 2000,
     });
 
     const rawContent = response.choices[0].message.content || "";
@@ -48,27 +67,128 @@ at least of 15 seconds long and include at least 3 different animations.`,
 
     console.log("Generated Manim Code:", manimCode);
 
-    // Step 2: Render Manim Code (Assumed to return path of output .mp4)
-    // const renderResult = await runManimCode(manimCode);~
+    // Step 2: Render Manim Code
+    console.log("Starting Manim rendering...");
+    const renderResult = await runManimCode(manimCode);
+    console.log(
+      `Rendering completed. Animation ID: ${renderResult.animationId}, Videos: ${renderResult.videos.length}`
+    );
 
-    const videoPath = await runManimCode(manimCode);
+    if (renderResult.videos.length === 0) {
+      throw new Error("No videos were generated during rendering");
+    }
 
-    // Upload to S3
-    const fileStream = fs.createReadStream(videoPath);
-    const fileName = `Anibot/manim-video-${uuidv4()}.mp4`;
+    // Step 3: Upload all videos to S3 with organized structure
+    console.log("Starting S3 uploads...");
+    const uploadPromises = renderResult.videos.map(async (video, index) => {
+      try {
+        console.log(
+          `Uploading video ${index + 1}/${renderResult.videos.length}: ${video.scene}`
+        );
 
-    const uploadParams = {
-      Bucket: process.env.S3_BUCKET_NAME!,
-      Key: fileName,
-      Body: fileStream,
-      ContentType: "video/mp4",
+        // Verify file exists before upload
+        if (!fs.existsSync(video.path)) {
+          throw new Error(`Video file not found: ${video.path}`);
+        }
+
+        const fileStats = fs.statSync(video.path);
+        console.log(`File size: ${fileStats.size} bytes`);
+
+        const fileStream = fs.createReadStream(video.path);
+        const fileName = `Anibot/${renderResult.animationId}/${video.scene}.mp4`;
+
+        const uploadParams = {
+          Bucket: process.env.S3_BUCKET_NAME!,
+          Key: fileName,
+          Body: fileStream,
+          ContentType: "video/mp4",
+          ACL: "public-read",
+          Metadata: {
+            "animation-id": renderResult.animationId,
+            "scene-name": video.scene,
+            "upload-timestamp": new Date().toISOString(),
+          },
+        };
+
+        const uploadResult = await s3.upload(uploadParams).promise();
+        console.log(
+          `Successfully uploaded: ${video.scene} -> ${uploadResult.Location}`
+        );
+
+        return {
+          sceneName: video.scene,
+          url: uploadResult.Location,
+          key: uploadResult.Key,
+          order: index + 1,
+        } as UploadedVideo;
+      } catch (uploadError) {
+        console.error(`Failed to upload video ${video.scene}:`, uploadError);
+        const errorMessage =
+          uploadError instanceof Error
+            ? uploadError.message
+            : String(uploadError);
+        throw new Error(
+          `Upload failed for scene ${video.scene}: ${errorMessage}`
+        );
+      }
+    });
+
+    // Wait for all uploads to complete
+    const uploadResults = await Promise.all(uploadPromises);
+    console.log(`All ${uploadResults.length} videos uploaded successfully`);
+
+    // Step 4: Clean up local video files
+    console.log("Cleaning up local files...");
+    const cleanupPromises = renderResult.videos.map(async (video) => {
+      try {
+        await fs.promises.unlink(video.path);
+        console.log(`Deleted local file: ${video.path}`);
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        console.warn(
+          `Failed to delete local file ${video.path}:`,
+          errorMessage
+        );
+      }
+    });
+
+    await Promise.allSettled(cleanupPromises); // Use allSettled to not fail if some deletions fail
+
+    // Step 5: Return success response
+    const response_data = {
+      success: true,
+      message: "All scenes rendered and uploaded successfully",
+      animationId: renderResult.animationId,
+      videos: uploadResults.sort((a, b) => a.order - b.order), // Sort by order
+      totalVideos: uploadResults.length,
+      s3Path: `Anibot/${renderResult.animationId}/`,
+      timestamp: new Date().toISOString(),
     };
 
-    const uploadResult = await s3.upload(uploadParams).promise();
-
-    res.status(200).json({ message: "Rendered", url: uploadResult.Location });
+    console.log("Response data:", JSON.stringify(response_data, null, 2));
+    res.status(200).json(response_data);
   } catch (error) {
     console.error("Error during scene creation:", error);
-    res.status(500).json({ error: "Internal server error" });
+
+    // Return detailed error information
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorResponse = {
+      success: false,
+      error: "Scene creation failed",
+      details: errorMessage,
+      timestamp: new Date().toISOString(),
+    };
+
+    if (errorMessage.includes("timeout")) {
+      res.status(408).json({ ...errorResponse, error: "Rendering timeout" });
+    } else if (errorMessage.includes("No Scene classes found")) {
+      res
+        .status(400)
+        .json({ ...errorResponse, error: "Invalid Manim code generated" });
+    } else if (errorMessage.includes("Upload failed")) {
+      res.status(502).json({ ...errorResponse, error: "S3 upload failed" });
+    } else {
+      res.status(500).json(errorResponse);
+    }
   }
 }
