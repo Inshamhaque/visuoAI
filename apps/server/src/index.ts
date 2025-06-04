@@ -1,7 +1,9 @@
 import express from "express";
 const app = express();
 import { userRouter } from "./routes/user.routes";
+import cors from "cors";
 import { animationRouter } from "./routes/animation.routes";
+import { messagesRouter } from "./routes/messages.routes";
 // health check endpoint
 // endpoints -> user,
 /* 
@@ -13,9 +15,11 @@ import { animationRouter } from "./routes/animation.routes";
     ...}
   }
 */
+app.use(cors());
 app.use(express.json());
 app.use("/user", userRouter);
 app.use("/animation", animationRouter);
+app.use("/messages", messagesRouter);
 app.get("/health", (req, res) => {
   res.status(200).send("OK");
 });

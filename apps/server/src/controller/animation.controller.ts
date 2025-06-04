@@ -5,7 +5,10 @@ import AWS from "aws-sdk";
 import fs from "fs";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
+import { Prisma, PrismaClient } from "@prisma/client";
+import { Sender } from "@prisma/client";
 
+const prisma = new PrismaClient();
 const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // Configure AWS SDK
@@ -35,10 +38,10 @@ export async function createScenes(req: Request, res: Response) {
       messages: [
         {
           role: "system",
-          content: `You are a helpful assistant that generates Manim code. Follow these rules strictly:
+          content: `You are a helpful assistant that generates Manim code. First explain your approach in 3-5 seconds and then, Follow these rules strictly:
     1. Only use basic Manim classes: Scene, Circle, Square, Triangle, Rectangle, Text, Axes, Line, Arrow, Dot
     2. Only use these animations: Create, Write, Transform, FadeIn, FadeOut, DrawBorderThenFill, ShowCreation
-    3. Always use 'from manim import *' as the first line
+    3. Always use 'from manim import *' as the second line
     4. Each scene should have exactly one construct(self) method
     5. Always end each scene with self.wait(2)
     6. Do not use: ParametricSurface, ThreeDScene, MovingCameraScene, or any 3D objects
@@ -60,6 +63,10 @@ Make sure each class name is unique and descriptive.`,
     });
 
     const rawContent = response.choices[0].message.content || "";
+    console.log("Raw Manim code generated:", rawContent);
+
+    // store the prompt and ai generaed text response in prisma
+
     const manimCode = rawContent
       .replace(/^\s*```(?:python)?\s*/, "")
       .replace(/\s*```[\s\r\n]*$/, "")
@@ -159,13 +166,27 @@ Make sure each class name is unique and descriptive.`,
       success: true,
       message: "All scenes rendered and uploaded successfully",
       animationId: renderResult.animationId,
-      videos: uploadResults.sort((a, b) => a.order - b.order), // Sort by order
+      videos: uploadResults.sort((a, b) => a.order - b.order),
       totalVideos: uploadResults.length,
       s3Path: `Anibot/${renderResult.animationId}/`,
       timestamp: new Date().toISOString(),
     };
 
-    console.log("Response data:", JSON.stringify(response_data, null, 2));
+    const message1 = await prisma.message.create({
+      data: {
+        sender: Sender.user,
+        content: prompt,
+        projectId: renderResult.animationId,
+      },
+    });
+    const message2 = await prisma.message.create({
+      data: {
+        sender: Sender.ai,
+        content: `Generating scenes for your prompt: "${prompt}"`,
+        projectId: renderResult.animationId,
+      },
+    });
+
     res.status(200).json(response_data);
   } catch (error) {
     console.error("Error during scene creation:", error);

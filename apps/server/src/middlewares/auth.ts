@@ -1,22 +1,29 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
+
 interface AuthRequest extends Request {
-  user?: any; // Define the user type as needed
+  user?: any;
 }
-export async function authMiddleware(
+
+export function authMiddleware(
   req: AuthRequest,
   res: Response,
   next: NextFunction
-) {
+): void {
   const authHeader = req.headers.authorization;
+
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return res.status(401).json({ error: "Unauthorized" });
+    res.status(401).json({ error: "Unauthorized - No token" });
+    return;
   }
+
   const token = authHeader.split(" ")[1];
-  const verify = jwt.verify(token, "JWT_SECRET");
-  if (!verify) {
-    return res.status(401).json({ error: "Unauthorized" });
+
+  try {
+    const decoded = jwt.verify(token, "JWT_SECRET");
+    req.user = decoded;
+    next();
+  } catch (error) {
+    res.status(401).json({ error: "Unauthorized - Invalid token" });
   }
-  req.user = verify;
-  next();
 }
