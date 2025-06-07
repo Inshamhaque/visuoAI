@@ -38,7 +38,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-tr from-gray-800 to-black text-white flex flex-col items-center justify-center px-4 relative">
+    <div className="flex justify-between min-h-screen bg-gradient-to-tr from-gray-800 to-black text-white flex flex-col items-center justify-center px-4 relative">
       {/* Top Right Nav Buttons */}
       <div className="absolute top-4 right-4 flex gap-2">
         <button className="text-sm text-white/70 hover:text-white">
@@ -48,18 +48,15 @@ export default function Home() {
           Get Started
         </button>
       </div>
-
       {/* Headline */}
       <h1 className="text-4xl sm:text-5xl font-bold text-center mb-4">
         What do you want to animate?
       </h1>
-
       {/* Subheading */}
       <p className="text-center text-white/60 mb-6 max-w-2xl">
         Create educational animations by simply describing concepts. Great for
         explaining physics, math, coding, biology, or any idea visually.
       </p>
-
       {/* Input Prompt */}
       <div className="flex bg-gray-800 rounded-lg w-full max-w-xl p-4 shadow-lg mb-6">
         <input
@@ -79,7 +76,6 @@ export default function Home() {
           <MoveRight size={18} />
         </button>
       </div>
-
       {/* Try Examples */}
       <p className="text-white/50 text-sm mb-4">Try an example</p>
       <div className="flex flex-wrap justify-center gap-3 text-sm text-white/70 mb-8">
@@ -98,7 +94,6 @@ export default function Home() {
           </button>
         ))}
       </div>
-
       {loading && <FullScreenLoader message="Creating animation..." />}
     </div>
   );
