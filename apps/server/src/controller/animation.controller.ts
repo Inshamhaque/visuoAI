@@ -7,6 +7,8 @@ import path from "path";
 import { v4 as uuidv4 } from "uuid";
 import { Prisma, PrismaClient } from "@prisma/client";
 import { Sender } from "@prisma/client";
+import { AuthRequest } from "../middlewares/auth";
+import { randomBytes } from "crypto";
 
 const prisma = new PrismaClient();
 const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -25,11 +27,17 @@ interface UploadedVideo {
   order: number;
 }
 
-export async function createScenes(req: Request, res: Response) {
+export async function createScenes(req: AuthRequest, res: Response) {
   const { prompt } = req.body;
   if (!prompt) return res.status(400).json({ error: "Prompt is required" });
 
   try {
+    console.log("user is (from the middleware)", req.user);
+    if (!req.user) {
+      return res.status(411).json({
+        message: "User not authenticated correctly. Try again later",
+      });
+    }
     // Step 1: Generate Manim Code from OpenAI
     console.log("Generating Manim code for prompt:", prompt);
 
@@ -65,7 +73,8 @@ Make sure each class name is unique and descriptive.`,
     const rawContent = response.choices[0].message.content || "";
     console.log("Raw Manim code generated:", rawContent);
 
-    // store the prompt and ai generaed text response in prisma
+    // store the project data in the database
+    // if the project id exists, then signify that this is an update else create a new project
 
     const manimCode = rawContent
       .replace(/^\s*```(?:python)?\s*/, "")
@@ -171,6 +180,18 @@ Make sure each class name is unique and descriptive.`,
       s3Path: `Anibot/${renderResult.animationId}/`,
       timestamp: new Date().toISOString(),
     };
+    // DB actions
+    //create the project
+    const userId = req.user;
+    const project = await prisma.project.create({
+      data: {
+        id: renderResult.animationId,
+        title: prompt,
+        userId: userId,
+        urls: JSON.parse(JSON.stringify(uploadResults)),
+        chatId: String(randomBytes(256)),
+      },
+    });
 
     const message1 = await prisma.message.create({
       data: {

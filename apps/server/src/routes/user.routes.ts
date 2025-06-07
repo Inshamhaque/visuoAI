@@ -4,7 +4,7 @@ const router = express.Router();
 router.post("/signup", (req, res) => {
   signup(req, res);
 });
-router.get("/signin", (req, res) => {
+router.post("/signin", (req, res) => {
   signin(req, res);
 });
 export const userRouter = router;

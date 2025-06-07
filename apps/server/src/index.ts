@@ -4,6 +4,7 @@ import { userRouter } from "./routes/user.routes";
 import cors from "cors";
 import { animationRouter } from "./routes/animation.routes";
 import { messagesRouter } from "./routes/messages.routes";
+import { authMiddleware } from "./middlewares/auth";
 // health check endpoint
 // endpoints -> user,
 /* 
@@ -20,7 +21,7 @@ app.use(express.json());
 app.use("/user", userRouter);
 app.use("/animation", animationRouter);
 app.use("/messages", messagesRouter);
-app.get("/health", (req, res) => {
+app.get("/health", authMiddleware, (req, res) => {
   res.status(200).send("OK");
 });
 app.listen(3001, () => {
