@@ -16,10 +16,16 @@ export default function Home() {
     try {
       setLoading(true);
       localStorage.setItem("prompt", prompt);
-
+      // TODO : Hardcoded authorization header on the client side
       const response = await axios.post(
         `${process.env.NEXT_PUBLIC_BASE_URL}/animation/create`,
-        { prompt }
+        { prompt },
+        {
+          headers: {
+            authorization:
+              "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIxOGE2NmVhYy1kYmIzLTRhMzUtOTJlNS03NjlhMmQwZDZiMTkiLCJpYXQiOjE3NDkzMjc3MTF9.8FqpvJ8Gyp0e52FMOFTEDrjyS94Z-9hTRRhrLGwnqmc",
+          },
+        }
       );
 
       const animationId = response.data.animationId;

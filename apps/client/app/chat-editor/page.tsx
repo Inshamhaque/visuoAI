@@ -2,6 +2,7 @@
 import { ArrowUp } from "lucide-react";
 import Navbar from "../components/Navbar";
 import React, { useState } from "react";
+import VideoEditor from "../components/VideoEditor/main";
 
 export default function ChatEditorPage() {
   // const messages = [
@@ -68,25 +69,7 @@ export default function ChatEditorPage() {
         {/* Right Editor Side */}
         <div className="col-span-1 bg-gray-900 rounded-lg shadow-lg flex flex-col h-full">
           {/* Toolbar or header */}
-          <div className="mb-4 text-white font-semibold text-lg select-none">
-            Editor
-          </div>
-
-          {/* Editor text area */}
-          <textarea
-            className="flex-1 bg-gray-800 text-white p-4 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Write your content here..."
-          />
-
-          {/* Optional footer buttons */}
-          <div className="mt-4 flex justify-end space-x-3 select-none">
-            <button className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition">
-              Save
-            </button>
-            <button className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition">
-              Clear
-            </button>
-          </div>
+          <VideoEditor />
         </div>
       </div>
     </div>
