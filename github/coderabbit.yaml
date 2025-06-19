@@ -1,0 +1,10 @@
+reviews:
+  enabled: true
+  mode: auto # Options: manual, auto
+  rules:
+    - name: "Code Quality"
+      description: "Ensure best coding practices"
+    - name: "Security Checks"
+      description: "Detect potential security risks"
+    - name: "Performance"
+      description: "Highlight performance optimizations"
