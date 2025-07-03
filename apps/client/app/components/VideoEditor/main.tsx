@@ -5,14 +5,14 @@ import { getProject } from "../../store";
 import { setCurrentProject, updateProject } from "../../store/slices/projectsSlice";
 import { rehydrate, setMediaFiles } from '../../store/slices/projectSlice';
 import { setActiveSection } from "../../store/slices/projectSlice";
-// import AddText from '../../../components/editor/AssetsPanel/tools-section/AddText';
+import AddText from '../VideoEditor/AssetsPanel/tools-section/AddText';
 // import AddMedia from '../../../components/editor/AssetsPanel/AddButtons/UploadMedia';
 // import MediaList from '../../../components/editor/AssetsPanel/tools-section/MediaList';
 import { useRouter } from 'next/navigation';
-// import TextButton from "@/app/components/editor/AssetsPanel/SidebarButtons/TextButton";
+import TextButton from "../VideoEditor/AssetsPanel/SideButtons/TextButton";
 // import LibraryButton from "@/app/components/editor/AssetsPanel/SidebarButtons/LibraryButton";
 // import ExportButton from "@/app/components/editor/AssetsPanel/SidebarButtons/ExportButton";
-// import HomeButton from "@/app/components/editor/AssetsPanel/SidebarButtons/HomeButton";
+import HomeButton from "../VideoEditor/AssetsPanel/SideButtons/HomeButton";
 // import ShortcutsButton from "@/app/components/editor/AssetsPanel/SidebarButtons/ShortcutsButton";
 // import MediaProperties from "../../../components/editor/PropertiesSection/MediaProperties";
 // import TextProperties from "../../../components/editor/PropertiesSection/TextProperties";
@@ -101,10 +101,10 @@ export default function Project({ params }: { params: { id: string } }) {
                 {/* Left Sidebar - Buttons */}
                 <div className="flex-[0.1] min-w-[60px] max-w-[100px] border-r border-gray-700 overflow-y-auto p-4">
                     <div className="flex flex-col space-y-2">
-                        {/* <HomeButton /> */}
-                        {/* <TextButton onClick={() => handleFocus("text")} />
-                        <LibraryButton onClick={() => handleFocus("media")} />
-                        <ExportButton onClick={() => handleFocus("export")} /> */}
+                        <HomeButton />
+                        <TextButton onClick={() => handleFocus("text")} />
+                        {/* <LibraryButton onClick={() => handleFocus("media")} /> */}
+                        {/* <ExportButton onClick={() => handleFocus("export")} /> */}
                         {/* TODO: add shortcuts guide but in a better way */}
                         {/* <ShortcutsButton onClick={() => handleFocus("export")} /> */}
                     </div>
@@ -123,8 +123,8 @@ export default function Project({ params }: { params: { id: string } }) {
                     )}
                     {activeSection === "text" && (
                         <div>
-                          this is the text add modal 
-                            {/* <AddText /> */}
+                          
+                            <AddText />
                         </div>
                     )}
                     {/*  we dont need this */}

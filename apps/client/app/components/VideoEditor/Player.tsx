@@ -66,10 +66,10 @@ export const PreviewPlayer = () => {
             component={Composition}
             inputProps={{}}
             durationInFrames={Math.floor(duration * fps) + 1}
-            compositionWidth={960}
-            compositionHeight={540}
+            compositionWidth={1920}
+            compositionHeight={1080}
             fps={fps}
-            // style={{ width: "2000", height: "1000" }}
+            style={{ width: "100%", height: "100%" }}
             controls
         />
     )
