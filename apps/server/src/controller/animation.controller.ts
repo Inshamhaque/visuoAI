@@ -5,8 +5,7 @@ import AWS from "aws-sdk";
 import fs from "fs";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
-import { Prisma, PrismaClient } from "@prisma/client";
-import { Sender } from "@prisma/client";
+import { Prisma, PrismaClient, Sender } from "@prisma/client";
 import { AuthRequest } from "../middlewares/auth";
 import { randomBytes } from "crypto";
 
