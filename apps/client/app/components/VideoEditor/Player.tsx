@@ -3,8 +3,9 @@ import { Player, PlayerRef } from "@remotion/player";
 import Composition from "./remotion/compostion";
 import { useAppSelector, useAppDispatch } from "@/app/store";
 import { useRef, useState, useEffect } from "react";
-// import { setIsPlaying } from "@/app/store/slices/projectSlice";
+import { setIsPlaying } from "@/app/store/slices/projectSlice";
 import { useDispatch } from "react-redux";
+import { ErrorBoundary } from "next/dist/client/components/error-boundary";
 
 const fps = 30;
 
@@ -24,19 +25,19 @@ export const PreviewPlayer = () => {
     }, [currentTime, fps]);
 
     useEffect(() => {
-        // playerRef?.current?.addEventListener("play", () => {
-        //     dispatch(setIsPlaying(true));
-        // });
-        // playerRef?.current?.addEventListener("pause", () => {
-        //     dispatch(setIsPlaying(false));
-        // });
+        playerRef?.current?.addEventListener("play", () => {
+            dispatch(setIsPlaying(true));
+        });
+        playerRef?.current?.addEventListener("pause", () => {
+            dispatch(setIsPlaying(false));
+        });
         return () => {
-            // playerRef?.current?.removeEventListener("play", () => {
-            //     dispatch(setIsPlaying(true));
-            // });
-            // playerRef?.current?.removeEventListener("pause", () => {
-            //     dispatch(setIsPlaying(false));
-            // });
+            playerRef?.current?.removeEventListener("play", () => {
+                dispatch(setIsPlaying(true));
+            });
+            playerRef?.current?.removeEventListener("pause", () => {
+                dispatch(setIsPlaying(false));
+            });
         };
     }, [playerRef]);
 
@@ -65,11 +66,14 @@ export const PreviewPlayer = () => {
             component={Composition}
             inputProps={{}}
             durationInFrames={Math.floor(duration * fps) + 1}
-            compositionWidth={1920}
-            compositionHeight={1080}
+            compositionWidth={960}
+            compositionHeight={540}
             fps={fps}
-            style={{ width: "100%", height: "100%" }}
+            // style={{ width: "2000", height: "1000" }}
             controls
         />
     )
 };
+function FallbackComponent({ error }: { error: Error }) {
+  return <pre style={{ color: 'red' }}>{error.message}</pre>;
+}

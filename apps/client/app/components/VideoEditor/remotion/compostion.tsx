@@ -1,55 +1,128 @@
-"use client"
-import { storeProject, useAppDispatch, useAppSelector } from "@/app/store";
+"use client";
+import { useAppDispatch, useAppSelector } from "@/app/store";
 import { SequenceItem } from "./sequence-item";
 import { MediaFile, TextElement } from "@/app/types/types";
-import { useCurrentFrame, useVideoConfig } from 'remotion';
-import { use, useCallback, useEffect, useRef, useState } from "react";
+import { useCurrentFrame } from "remotion";
+import { useEffect, useRef } from "react";
 import { setCurrentTime, setMediaFiles } from "@/app/store/slices/projectSlice";
 
 const Composition = () => {
-    const projectState = useAppSelector((state) => state.projectState);
-    const { mediaFiles, textElements } = projectState;
-    const frame = useCurrentFrame();
-    const dispatch = useAppDispatch();
+  const fps = 30;
+  const frame = useCurrentFrame();
+  const dispatch = useAppDispatch();
 
-    const THRESHOLD = 0.1; // Minimum change to trigger dispatch (in seconds)
-    const previousTime = useRef(0); // Store previous time to track changes
+  const THRESHOLD = 0.1;
+  const previousTime = useRef(0);
 
-    useEffect(() => {
-        const currentTimeInSeconds = frame / fps;
-        if (Math.abs(currentTimeInSeconds - previousTime.current) > THRESHOLD) {
-            if (currentTimeInSeconds !== undefined) {
-                dispatch(setCurrentTime(currentTimeInSeconds));
-            }
-        }
+  useEffect(() => {
+    const demoMediaFiles: MediaFile[] = [
+  {
+    id: "video-1",
+    fileName: "sample-video.mp4",
+    fileId: "demo-file-1",
+    type: "video",
+    src: "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+    startTime: 0,
+    endTime: 10,
+    positionStart: 0,
+    positionEnd: 10,
+    includeInMerge: true,
+    playbackSpeed: 1,
+    volume: 100,
+    zIndex: 1,
+    x: 0,
+    y: 0,
+    width: 960,
+    height: 540,
+    opacity: 100,
+    rotation: 0,
+    crop: {
+      x: 0,
+      y: 0,
+      width: 960,
+      height: 540,
+    },
+  },
+  {
+    id: "image-1",
+    fileName: "sample-image.mp4",
+    fileId: "demo-file-2",
+    type: "video",
+    src: "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
+    startTime: 0,
+    endTime: 10,
+    positionStart: 5,
+    positionEnd: 15,
+    includeInMerge: true,
+    playbackSpeed: 1,
+    volume: 0,
+    zIndex: 2,
+    x: 300,
+    y: 100,
+    width: 300,
+    height: 300,
+    opacity: 100,
+    rotation: 0,
+    crop: {
+      x: 0,
+      y: 0,
+      width: 300,
+      height: 300,
+    },
+  },
+  {
+    id: "audio-1",
+    fileName: "sample-audio.mp4",
+    fileId: "demo-file-3",
+    type: "audio",
+    src: "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+    startTime: 0,
+    endTime: 20,
+    positionStart: 0,
+    positionEnd: 20,
+    includeInMerge: true,
+    playbackSpeed: 1,
+    volume: 50,
+    zIndex: 0,
+    x: 0,
+    y: 0,
+    width: 0,
+    height: 0,
+    opacity: 100,
+    rotation: 0,
+  }
+];
+    dispatch(setMediaFiles(demoMediaFiles));
+  }, [dispatch]);
 
-    }, [frame, dispatch]);
+  const projectState = useAppSelector((state) => state.projectState);
+  const { mediaFiles, textElements } = projectState;
 
-    const fps = 30;
-    return (
-        <>
-            {mediaFiles
-                .map((item: MediaFile) => {
-                    if (!item) return;
-                    const trackItem = {
-                        ...item,
-                    } as MediaFile;
-                    return SequenceItem[trackItem.type](trackItem, {
-                        fps
-                    });
-                })}
-            {textElements
-                .map((item: TextElement) => {
-                    if (!item) return;
-                    const trackItem = {
-                        ...item,
-                    } as TextElement;
-                    return SequenceItem["text"](trackItem, {
-                        fps
-                    });
-                })}
-        </>
-    );
+  useEffect(() => {
+    const currentTimeInSeconds = frame / fps;
+    if (Math.abs(currentTimeInSeconds - previousTime.current) > THRESHOLD) {
+      if (currentTimeInSeconds !== undefined) {
+        dispatch(setCurrentTime(currentTimeInSeconds));
+        previousTime.current = currentTimeInSeconds;
+      }
+    }
+  }, [frame, dispatch, fps]);
+
+  return (
+    <>
+      {Array.isArray(mediaFiles) &&
+        mediaFiles.map((item: MediaFile) => {
+          if (!item || !SequenceItem[item.type]) return null;
+          return SequenceItem[item.type](item, { fps });
+        })}
+
+      {Array.isArray(textElements) &&
+        textElements.map((item: TextElement) => {
+          if (!item) return null;
+          return SequenceItem["text"](item, { fps });
+        })}
+    </>
+  );
 };
 
 export default Composition;
