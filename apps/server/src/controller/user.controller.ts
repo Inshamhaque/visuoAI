@@ -7,14 +7,14 @@ const client = new PrismaClient();
 export async function signup(req: Request, res: Response) {
   const { firstname, lastname, email, password } = req.body;
   if (!firstname || !lastname || !email || !password) {
-    return res.status(400).json({ error: "All fields are required" });
+    return res.json({ error: "All fields are required",status:411 });
   }
   try {
     const existingUser = await client.user.findUnique({
       where: { mail: email },
     });
     if (existingUser) {
-      return res.status(400).json({ error: "User already exists" });
+      return res.json({ error: "User already exists",status:400 });
     }
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await client.user.create({
@@ -27,14 +27,21 @@ export async function signup(req: Request, res: Response) {
     });
     // generate JWT token
     const token = jwt.sign({ userId: user.id }, "JWT_SECRET");
-    return res.status(201).json({
+    res.cookie('token',token,{
+      httpOnly : true, 
+      sameSite:"lax",
+      secure:false,// todo: make it true while deploying
+      maxAge: 7*24*60*60*1000
+    })
+    return res.json({
       user,
       token,
       message: "User created successfully",
+      status:201
     });
   } catch (error) {
     console.error("Error during signup:", error);
-    return res.status(500).json({ error: "Internal server error" });
+    return res.json({ error: "Internal server error",status:500});
   }
 }
 export async function signin(req: Request, res: Response) {
@@ -47,20 +54,28 @@ export async function signin(req: Request, res: Response) {
       where: { mail: mail },
     });
     if (!user) {
-      return res.status(404).json({ error: "User not found" });
+      return res.json({ error: "User not found",status:404});
     }
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      return res.status(401).json({ error: "Invalid password" });
+      return res.json({ error: "Invalid password" ,status:401});
     }
+    // generate jwt token here
     const token = jwt.sign({ userId: user.id }, "JWT_SECRET");
-    return res.status(200).json({
+    res.cookie('token',token,{
+      httpOnly : true, 
+      sameSite:"none",
+      secure:true,
+      maxAge: 7*24*60*60*1000
+    })
+    return res.json({
       user,
       token,
       message: "Signin successful",
+      status:200
     });
   } catch (error) {
     console.error("Error during signin:", error);
-    return res.status(500).json({ error: "Internal server error" });
+    return res.json({ error: "Internal server error", status:500});
   }
 }

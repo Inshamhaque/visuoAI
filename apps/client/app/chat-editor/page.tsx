@@ -3,6 +3,7 @@ import { ArrowUp } from "lucide-react";
 import Navbar from "../components/Navbar";
 import React, { useState } from "react";
 import VideoEditor from "../components/VideoEditor/main";
+import ProtectedRoute from "../ProtectedRoute";
 
 export default function ChatEditorPage() {
   // const messages = [
@@ -21,7 +22,9 @@ export default function ChatEditorPage() {
       <div className="col-span-1 bg-gray-900 rounded-lg shadow-lg flex flex-col h-full">
           {/* Toolbar or header */}
           {/* TODO : add database connectivity here */}
-          <VideoEditor />
+          <ProtectedRoute>
+            <VideoEditor />
+          </ProtectedRoute>
         </div>
     </div>
   );

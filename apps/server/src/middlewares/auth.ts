@@ -27,6 +27,6 @@ export function authMiddleware(
     req.user = decoded?.userId;
     next();
   } catch (error) {
-    res.status(401).json({ error: "Unauthorized - Invalid token" });
+    res.json({ error: "Unauthorized - Invalid token",status:401 });
   }
 }

@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import { MoveRight } from "lucide-react";
 import axios from "axios";
 import FullScreenLoader from "./components/LoaderScreen";
+import { toast, ToastContainer } from 'react-toastify'
+import { BACKEND_URL } from "./lib/utils";
 
 export default function Home() {
   const router = useRouter();
@@ -15,24 +17,35 @@ export default function Home() {
 
     try {
       setLoading(true);
+      const isToken = localStorage.getItem("token");
+      if(!isToken){
+        router.push('/auth/signin');
+        return;
+      }
       localStorage.setItem("prompt", prompt);
       // TODO : Hardcoded authorization header on the client side
       const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/animation/create`,
+        `${BACKEND_URL}/animation/create`,
         { prompt },
         {
           headers: {
             authorization:
-              "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIxOGE2NmVhYy1kYmIzLTRhMzUtOTJlNS03NjlhMmQwZDZiMTkiLCJpYXQiOjE3NDkzMjc3MTF9.8FqpvJ8Gyp0e52FMOFTEDrjyS94Z-9hTRRhrLGwnqmc",
+              `Bearer ${localStorage.getItem('token')}`
           },
         }
       );
-
+      if(response.data.status==401){
+        return toast.error('Unauthorized user',{
+          position:"top-right"
+        })
+      }
       const animationId = response.data.animationId;
       router.push(`/chat-editor?id=${encodeURIComponent(animationId)}`);
     } catch (error) {
-      console.error("Failed to create animation:", error);
-      alert("Something went wrong. Please try again.");
+      toast.error("Failed to create animation:", {
+        position:"top-right"
+      });
+      alert("Something went wrong. Please try again later.");
     } finally {
       setLoading(false);
       setPrompt("");
@@ -47,10 +60,14 @@ export default function Home() {
     <div className="flex justify-between min-h-screen bg-gradient-to-tr from-gray-800 to-black text-white flex flex-col items-center justify-center px-4 relative">
       {/* Top Right Nav Buttons */}
       <div className="absolute top-4 right-4 flex gap-2">
-        <button className="text-sm text-white/70 hover:text-white">
+        <button onClick={()=>{
+          router.push('/auth/signin')
+        }} className="text-sm text-white/70 hover:text-white">
           Sign In
         </button>
-        <button className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-1.5 rounded">
+        <button onClick={()=>{
+          router.push('/auth/signup')
+        }} className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-1.5 rounded">
           Get Started
         </button>
       </div>
@@ -101,6 +118,7 @@ export default function Home() {
         ))}
       </div>
       {loading && <FullScreenLoader message="Creating animation..." />}
+      <ToastContainer />
     </div>
   );
 }

@@ -41,7 +41,7 @@ export async function createScenes(req: AuthRequest, res: Response) {
     console.log("Generating Manim code for prompt:", prompt);
 
     const response = await client.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4o-mini",
       messages: [
         {
           role: "system",

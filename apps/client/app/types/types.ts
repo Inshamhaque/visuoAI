@@ -1,3 +1,7 @@
+export type signininput = {
+    mail : string,
+    password : string
+}
 export type MediaType = 'video' | 'audio' | 'image' | 'unknown';
 
 export interface UploadedFile {

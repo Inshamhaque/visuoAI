@@ -2,6 +2,7 @@ import express from "express";
 const app = express();
 import { userRouter } from "./routes/user.routes";
 import cors from "cors";
+import cookieParser from "cookie-parser"
 import { animationRouter } from "./routes/animation.routes";
 import { messagesRouter } from "./routes/messages.routes";
 import { authMiddleware } from "./middlewares/auth";
@@ -16,14 +17,18 @@ import { authMiddleware } from "./middlewares/auth";
     ...}
   }
 */
-app.use(cors());
+app.use(cookieParser());
+app.use(cors({
+  origin:'http://localhost:3000',
+  credentials:true
+}));
 app.use(express.json());
 app.use("/user", userRouter);
 app.use("/animation", animationRouter);
 app.use("/messages", messagesRouter);
-app.get("/health", authMiddleware, (req, res) => {
+app.get("/health",  (req, res) => {
   res.status(200).send("OK");
 });
-app.listen(3001, () => {
+app.listen(3001,'0.0.0.0', () => {
   console.log("Server is running on port 3001");
 });

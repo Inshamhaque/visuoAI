@@ -6,7 +6,7 @@ import { memo, useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
 import Image from "next/image";
 import Header from "../Header";
-import { MediaFile, TextElement } from "@/app/types";
+import { MediaFile, TextElement } from "@/app/types/types";
 import { debounce, throttle } from "lodash";
 
 export default function TextTimeline() {
