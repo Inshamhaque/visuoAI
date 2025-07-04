@@ -49,6 +49,7 @@ export default function Home() {
     } finally {
       setLoading(false);
       setPrompt("");
+      // test
     }
   };
 
