@@ -11,11 +11,11 @@ import AddText from '../VideoEditor/AssetsPanel/tools-section/AddText';
 import { useRouter } from 'next/navigation';
 import TextButton from "../VideoEditor/AssetsPanel/SideButtons/TextButton";
 // import LibraryButton from "@/app/components/editor/AssetsPanel/SidebarButtons/LibraryButton";
-// import ExportButton from "@/app/components/editor/AssetsPanel/SidebarButtons/ExportButton";
+import ExportButton from "../VideoEditor/AssetsPanel/SideButtons/ExportButton";
 import HomeButton from "../VideoEditor/AssetsPanel/SideButtons/HomeButton";
 // import ShortcutsButton from "@/app/components/editor/AssetsPanel/SidebarButtons/ShortcutsButton";
-// import MediaProperties from "../../../components/editor/PropertiesSection/MediaProperties";
-// import TextProperties from "../../../components/editor/PropertiesSection/TextProperties";
+import MediaProperties from "../VideoEditor/Properties/MediaProperties";
+import TextProperties from "../VideoEditor/Properties/TextProperties"
 import { Timeline } from "./timeline/Timeline";
 import { PreviewPlayer } from "./Player";
 import { MediaFile } from "@/app/types/types";
@@ -104,7 +104,7 @@ export default function Project({ params }: { params: { id: string } }) {
                         <HomeButton />
                         <TextButton onClick={() => handleFocus("text")} />
                         {/* <LibraryButton onClick={() => handleFocus("media")} /> */}
-                        {/* <ExportButton onClick={() => handleFocus("export")} /> */}
+                        <ExportButton onClick={() => handleFocus("export")} />
                         {/* TODO: add shortcuts guide but in a better way */}
                         {/* <ShortcutsButton onClick={() => handleFocus("export")} /> */}
                     </div>
@@ -148,14 +148,14 @@ export default function Project({ params }: { params: { id: string } }) {
                         <div>
                             <h2 className="text-lg font-semibold mb-4">Media Properties</h2>
                             Media properties section 
-                            {/* <MediaProperties /> */}
+                            <MediaProperties />
                         </div>
                     )}
                     {activeElement === "text" && (
                         <div>
                             <h2 className="text-lg font-semibold mb-4">Text Properties</h2>
                             Text properties section
-                            {/* <TextProperties /> */}
+                            <TextProperties />
                         </div>
                     )}
                 </div>
