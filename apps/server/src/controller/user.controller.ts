@@ -2,6 +2,7 @@ import { PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { AuthRequest } from "../middlewares/auth";
 const client = new PrismaClient();
 
 export async function signup(req: Request, res: Response) {
@@ -78,4 +79,33 @@ export async function signin(req: Request, res: Response) {
     console.error("Error during signin:", error);
     return res.json({ error: "Internal server error", status:500});
   }
+}
+export async function getProjects(req:AuthRequest, res:Response){
+    const { userId } = req.user;
+    try{
+      const projs = await client.project.findMany({
+        where:{
+          userId
+        }
+      })
+      if(!projs){
+        return res.json({
+          message : "No projects found",
+          status:411
+        })
+      }
+      return res.json({
+        message : "prjects fetched successfully",
+        projects:projs,
+        status:200
+      })
+
+    }
+    catch(e){
+      res.json({
+        message : "some error occurred",
+        status:500
+      })
+      console.error(e);
+    }
 }

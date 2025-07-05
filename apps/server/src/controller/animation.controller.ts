@@ -8,6 +8,7 @@ import { v4 as uuidv4 } from "uuid";
 import { Prisma, PrismaClient, Sender } from "@prisma/client";
 import { AuthRequest } from "../middlewares/auth";
 import { randomBytes } from "crypto";
+import { fixOverlapsInManimCode } from "../services/fixCode";
 
 const prisma = new PrismaClient();
 const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -37,54 +38,140 @@ export async function createScenes(req: AuthRequest, res: Response) {
         message: "User not authenticated correctly. Try again later",
       });
     }
-    // Step 1: Generate Manim Code from OpenAI
-    console.log("Generating Manim code for prompt:", prompt);
 
-    const response = await client.chat.completions.create({
+    // Step 1: Generate Layout Plan from OpenAI
+    console.log("Generating layout plan for prompt:", prompt);
+
+    const layoutResponse = await client.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
         {
           role: "system",
-          content: `You are a helpful assistant that generates Manim code. First explain your approach in 3-5 seconds and then, Follow these rules strictly:
-    1. Only use basic Manim classes: Scene, Circle, Square, Triangle, Rectangle, Text, Axes, Line, Arrow, Dot
-    2. Only use these animations: Create, Write, Transform, FadeIn, FadeOut, DrawBorderThenFill, ShowCreation
-    3. Always use 'from manim import *' as the second line
-    4. Each scene should have exactly one construct(self) method
-    5. Always end each scene with self.wait(2)
-    6. Do not use: ParametricSurface, ThreeDScene, MovingCameraScene, or any 3D objects
-    7. Keep animations simple and working
-    8. Generate exactly 5-6 scene classes
-    9. NEVER use GrowFromCenter or GrowFromPoint - use Create or FadeIn instead
-    10. NEVER use ShowIncreasingSubsets - use Create instead`,
+          content: `You are a visual layout expert for educational animations. Your job is to create a clear, structured layout plan for Manim animations.
+
+Analyze the given topic and create a detailed layout plan that includes:
+1. Number of scenes (3-5 scenes)
+2. Scene names and purposes
+3. Visual elements for each scene
+4. Object positioning and flow
+5. Animation sequence and timing
+
+Focus on:
+- Clear visual hierarchy
+- Logical flow between scenes
+- Avoiding overlapping elements
+- Using appropriate spacing and positioning
+- Creating engaging visual storytelling
+
+Output your response as a structured JSON with this format:
+{
+  "totalScenes": number,
+  "scenes": [
+    {
+      "name": "SceneName",
+      "purpose": "What this scene explains",
+      "duration": "seconds",
+      "elements": [
+        {
+          "type": "text/shape/diagram",
+          "content": "what to show",
+          "position": "where to place it",
+          "animation": "how to animate it"
+        }
+      ],
+      "layout": "overall layout description"
+    }
+  ],
+  "overallFlow": "how scenes connect together"
+}`,
         },
         {
           role: "user",
-          content: `Generate a modular Manim script for the following prompt: "${prompt}".
-Create exactly 3-5 scene classes, each with a descriptive name and simple animations illustrating different parts of the topic.
-Do not include any comments. Output the full Python script with import statements and multiple scene classes. 
-Each scene should be at least 10 seconds long and include at least 2-3 different animations.
-Make sure each class name is unique and descriptive.`,
+          content: `Create a detailed layout plan for animating this topic: "${prompt}".
+Make sure each scene has a clear purpose and the visual elements are well-organized without overlapping.`,
+        },
+      ],
+      max_tokens: 1500,
+    });
+
+    const layoutContent = layoutResponse.choices[0].message.content || "";
+    console.log("Layout plan generated:", layoutContent);
+
+    // Extract JSON from the layout response
+    const layoutMatch = layoutContent.match(/```json\s*([\s\S]*?)```/i) || layoutContent.match(/\{[\s\S]*\}/);
+    let layoutPlan;
+    
+    if (layoutMatch) {
+      try {
+        layoutPlan = JSON.parse(layoutMatch[1] || layoutMatch[0]);
+      } catch (e) {
+        // If JSON parsing fails, use the raw content as context
+        layoutPlan = { rawLayout: layoutContent };
+      }
+    } else {
+      layoutPlan = { rawLayout: layoutContent };
+    }
+
+    // Step 2: Generate Manim Code based on Layout
+    console.log("Generating Manim code based on layout plan...");
+
+    const codeResponse = await client.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content: `You are a Manim code generator that creates clean, organized animations based on layout plans.
+
+Follow these strict rules:
+1. Only use basic Manim classes: Scene, Circle, Square, Triangle, Rectangle, Text, Axes, Line, Arrow, Dot
+2. Only use animations: Create, Write, Transform, FadeIn, FadeOut, DrawBorderThenFill
+3. Always use 'from manim import *' as the second line
+4. Each scene must have one construct(self) method and end with self.wait(2)
+5. DO NOT use overlapping positions — use .to_edge(), .shift(), .next_to() smartly to arrange objects clearly
+6. For multiple objects, align them horizontally or vertically using VGroup/HGroup and use .arrange(DIR)
+7. Space out items with buff or .shift() so they don't collide
+8. Limit on-screen text to 3–4 lines max at once
+9. NEVER use 3D scenes or advanced features — keep it 2D and simple and always use basic function that are easy to render
+10. Every scene must be visually distinct and organized
+11. Follow the provided layout plan exactly for positioning and flow
+12. Use proper spacing (buff=0.5 or more) between elements
+13. Position elements using the layout guidance provided
+14. In case of Data Structures, always ensure that the numerical value is present there. For example, while writing an array display value inside it and not just array containers. 
+
+Generate complete, runnable Python code that implements the layout plan precisely.`,
+        },
+        {
+          role: "user",
+          content: `Generate a modular Manim script for the topic: "${prompt}".
+
+Use this layout plan to guide your code generation:
+${JSON.stringify(layoutPlan, null, 2)}
+
+Create exactly the number of scenes specified in the layout plan, with the exact names and purposes described.
+Follow the element positioning and animation sequences from the layout plan.
+Do not include any comments. Output the full Python script with import statements and multiple scene classes.
+Each scene should implement the layout and elements specified in the plan.
+Make sure each class name matches the scene names from the layout plan.`,
         },
       ],
       max_tokens: 2000,
     });
 
-    const rawContent = response.choices[0].message.content || "";
-    console.log("Raw Manim code generated:", rawContent);
+    const rawContent = codeResponse.choices[0].message.content || "";
 
-    // store the project data in the database
-    // if the project id exists, then signify that this is an update else create a new project
+    // Extract only the Python code inside the ```python block
+    const match = rawContent.match(/```python\s*([\s\S]*?)```/i);
+    if (!match || !match[1]) {
+      throw new Error("No valid Python code block found in AI response.");
+    }
 
-    const manimCode = rawContent
-      .replace(/^\s*```(?:python)?\s*/, "")
-      .replace(/\s*```[\s\r\n]*$/, "")
-      .trim();
+    const manimCode = match[1].trim();
+    console.log("Extracted Manim Code:\n", manimCode);
 
-    console.log("Generated Manim Code:", manimCode);
-
-    // Step 2: Render Manim Code
+    // Step 3: Render Manim Code
     console.log("Starting Manim rendering...");
-    const renderResult = await runManimCode(manimCode);
+    const cleanedCode = fixOverlapsInManimCode(manimCode);
+    const renderResult = await runManimCode(cleanedCode);
     console.log(
       `Rendering completed. Animation ID: ${renderResult.animationId}, Videos: ${renderResult.videos.length}`
     );
@@ -93,7 +180,7 @@ Make sure each class name is unique and descriptive.`,
       throw new Error("No videos were generated during rendering");
     }
 
-    // Step 3: Upload all videos to S3 with organized structure
+    // Step 4: Upload all videos to S3 with organized structure
     console.log("Starting S3 uploads...");
     const uploadPromises = renderResult.videos.map(async (video, index) => {
       try {
@@ -152,7 +239,7 @@ Make sure each class name is unique and descriptive.`,
     const uploadResults = await Promise.all(uploadPromises);
     console.log(`All ${uploadResults.length} videos uploaded successfully`);
 
-    // Step 4: Clean up local video files
+    // Step 5: Clean up local video files
     console.log("Cleaning up local files...");
     const cleanupPromises = renderResult.videos.map(async (video) => {
       try {
@@ -169,7 +256,7 @@ Make sure each class name is unique and descriptive.`,
 
     await Promise.allSettled(cleanupPromises); // Use allSettled to not fail if some deletions fail
 
-    // Step 5: Return success response
+    // Step 6: Return success response
     const response_data = {
       success: true,
       message: "All scenes rendered and uploaded successfully",
@@ -178,7 +265,9 @@ Make sure each class name is unique and descriptive.`,
       totalVideos: uploadResults.length,
       s3Path: `Anibot/${renderResult.animationId}/`,
       timestamp: new Date().toISOString(),
+      layoutPlan: layoutPlan, // Include layout plan in response for debugging
     };
+
     // DB actions
     //create the project
     const userId = req.user;

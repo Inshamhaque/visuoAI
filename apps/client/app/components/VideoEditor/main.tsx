@@ -21,13 +21,16 @@ import { PreviewPlayer } from "./Player";
 import { MediaFile } from "@/app/types/types";
 // import ExportList from "../../../components/editor/AssetsPanel/tools-section/ExportList";
 import Image from "next/image";
+import { HamburgerIcon } from "lucide-react";
+import OverlaySidebar from "../ui/Sidebar";
 // import ProjectName from "../../../components/editor/player/ProjectName";
 export default function Project({ params }: { params: { id: string } }) {
     const { id } = params || "1234";
     const dispatch = useAppDispatch();
     const projectState = useAppSelector((state) => state.projectState);
     const { currentProjectId } = useAppSelector((state) => state.projects);
-    const [isLoading, setIsLoading] = useState(false); // todo: fix this 
+    const [isLoading, setIsLoading] = useState(false); // todo: fix this
+    const [open,setIsOpen] = useState(false) 
 
     const router = useRouter();
     const { activeSection, activeElement } = projectState;
@@ -86,6 +89,7 @@ export default function Project({ params }: { params: { id: string } }) {
 
     return (
         <div className="flex flex-col h-screen select-none">
+            <OverlaySidebar  isOpen={open} setIsOpen={setIsOpen}/>
             {/* Loading screen */}
             {
                 isLoading ? (
@@ -105,8 +109,12 @@ export default function Project({ params }: { params: { id: string } }) {
                         <TextButton onClick={() => handleFocus("text")} />
                         {/* <LibraryButton onClick={() => handleFocus("media")} /> */}
                         <ExportButton onClick={() => handleFocus("export")} />
-                        {/* TODO: add shortcuts guide but in a better way */}
-                        {/* <ShortcutsButton onClick={() => handleFocus("export")} /> */}
+                            <div onClick={()=>{setIsOpen(true)
+                            }} >
+                                <HamburgerIcon  />
+                            </div>
+                        
+                        
                     </div>
                 </div>
 
@@ -129,8 +137,9 @@ export default function Project({ params }: { params: { id: string } }) {
                     )}
                     {/*  we dont need this */}
                     {activeSection === "export" && (
-                        <div>
+                        <div className="relative">
                             <h2 className="text-lg font-semibold mb-4">Export</h2>
+                            <OverlaySidebar isOpen={open} setIsOpen={setIsOpen}/>
                             {/* <ExportList /> */}
                         </div>
                     )}
