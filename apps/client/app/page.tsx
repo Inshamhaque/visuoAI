@@ -6,11 +6,18 @@ import axios from "axios";
 import FullScreenLoader from "./components/LoaderScreen";
 import { toast, ToastContainer } from 'react-toastify'
 import { BACKEND_URL } from "./lib/utils";
-
+import { store, storeFile, storeProject, useAppDispatch } from "./store";
+import { random, update } from "lodash";
+import { ProjectState } from "./types/types";
+import { addProject } from "./store/slices/projectsSlice";
+import {  useAppSelector, getFile } from "./store";
+import { setFilesID, setMediaFiles } from "./store/slices/projectSlice";
 export default function Home() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [prompt, setPrompt] = useState("");
+  const dispatch = useAppDispatch();
+  const { mediaFiles, filesID } = useAppSelector((state) => state.projectState);
 
   const onClickHandler = async () => {
     if (!prompt.trim()) return;
@@ -34,13 +41,98 @@ export default function Home() {
           },
         }
       );
-      if(response.data.status==401){
+      const {animationId, videos, success } = response.data;
+      if(response.data.status==401 || !success){
         return toast.error('Unauthorized user',{
           position:"top-right"
         })
       }
-      const animationId = response.data.animationId;
-      router.push(`/chat-editor?id=${encodeURIComponent(animationId)}`);
+      // create an idb instance for the new project
+      const newProject: ProjectState = {
+            id: animationId,
+            projectName: animationId,
+            createdAt: new Date().toISOString(),
+            lastModified: new Date().toISOString(),
+            mediaFiles: videos,
+            textElements: [],
+            currentTime: 0,
+            isPlaying: false,
+            isMuted: false,
+            duration: 0,
+            activeSection: 'media',
+            activeElement: 'text',
+            activeElementIndex: 0,
+            filesID: [],
+            zoomLevel: 1,
+            timelineZoom: 100,
+            enableMarkerTracking: true,
+            resolution: { width: 1920, height: 1080 },
+            fps: 30,
+            aspectRatio: '16:9',
+            history: [],
+            future: [],
+            exportSettings: {
+                resolution: '1080p',
+                quality: 'high',
+                speed: 'fastest',
+                fps: 30,
+                format: 'mp4',
+                includeSubtitles: false,
+            },
+        };
+
+        await storeProject(newProject);
+        dispatch(addProject(newProject));
+        // setNewProjectName('');
+        // setIsCreating(false);
+        // toast.success('Project created successfully');
+      
+        // set media files here simply update the existing media files, with the one recieved from the backend
+        // also create the file db instance in the IDB
+        const updatedMedia = [...mediaFiles];
+        const updatedFiles = [...filesID || []]
+
+        // const file = await getFile(fileId);
+        const mediaId = crypto.randomUUID();
+
+        if (true) {
+            // const relevantClips = mediaFiles.filter(clip => clip.type === categorizeFile(file.type));
+            // const lastEnd = relevantClips.length > 0
+            //     ? Math.max(...relevantClips.map(f => f.positionEnd))
+            //     : 0;
+            videos.map((video:any)=>{
+              const newID = crypto.randomUUID();
+              storeFile(video,newID)
+              updatedMedia.push(video);
+              updatedFiles.push(newID);
+            })
+            // updatedMedia.push({
+            //     id: mediaId,
+            //     fileName: file.name,
+            //     fileId: fileId,
+            //     startTime: 0,
+            //     endTime: 30,
+            //     src: URL.createObjectURL(file),
+            //     positionStart: lastEnd,
+            //     positionEnd: lastEnd + 30,
+            //     includeInMerge: true,
+            //     x: 0,
+            //     y: 0,
+            //     width: 1920,
+            //     height: 1080,
+            //     rotation: 0,
+            //     opacity: 100,
+            //     crop: { x: 0, y: 0, width: 1920, height: 1080 },
+            //     playbackSpeed: 1,
+            //     volume: 100,
+            //     type: categorizeFile(file.type),
+            //     zIndex: 0,
+            // });
+        }
+        dispatch(setMediaFiles(updatedMedia));
+        dispatch(setFilesID(updatedFiles));
+        toast.success('Media added successfully.');
+      router.push(`/chat-editor/${encodeURIComponent(animationId)}`);
     } catch (error) {
       toast.error("Failed to create animation:", {
         position:"top-right"

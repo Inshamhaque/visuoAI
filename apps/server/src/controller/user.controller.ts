@@ -99,7 +99,6 @@ export async function getProjects(req:AuthRequest, res:Response){
         projects:projs,
         status:200
       })
-
     }
     catch(e){
       res.json({

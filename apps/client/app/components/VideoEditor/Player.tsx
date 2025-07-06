@@ -14,6 +14,7 @@ export const PreviewPlayer = () => {
     const { duration, currentTime, isPlaying, isMuted } = projectState;
     const playerRef = useRef<PlayerRef>(null);
     const dispatch = useDispatch();
+    const fps = 30
 
     // update frame when current time with marker
     useEffect(() => {

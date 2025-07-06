@@ -9,7 +9,7 @@ import toast from 'react-hot-toast';
 // Create IndexedDB database for files and projects
 const setupDB = async () => {
     if (typeof window === 'undefined') return null;
-    const db = await openDB('clipjs-files', 1, {
+    const db = await openDB('anibot-db', 1, {
         upgrade(db) {
             db.createObjectStore('files', { keyPath: 'id' });
             db.createObjectStore('projects', { keyPath: 'id' });
@@ -174,6 +174,32 @@ export const store = configureStore({
             serializableCheck: false,
         }),
 });
+
+// TODO: remove old state (localStorage we use indexedDB now) that is not used anymore 
+
+// Load persisted state from localStorage
+// const persistedState = loadState();
+// if (persistedState) {
+//     store.dispatch({
+//         type: 'REPLACE_STATE',
+//         payload: persistedState
+//     });
+// }
+
+// TODO: for some reason state get saved to localStorage twice when its none cause loss of old state i shall find better way to do this later
+// Subscribe to store changes to save to localStorage
+// if (typeof window !== 'undefined') {
+//     let isInitial = 2;
+//     store.subscribe(() => {
+//         if (isInitial) {
+//             isInitial -= 1;
+//             return;
+//         }
+
+//         const state = store.getState();
+//         saveState(state);
+//     });
+// }
 
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;

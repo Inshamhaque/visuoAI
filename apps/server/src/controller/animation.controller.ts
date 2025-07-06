@@ -9,6 +9,10 @@ import { Prisma, PrismaClient, Sender } from "@prisma/client";
 import { AuthRequest } from "../middlewares/auth";
 import { randomBytes } from "crypto";
 import { fixOverlapsInManimCode } from "../services/fixCode";
+import { exec } from 'child_process';
+import { promisify } from 'util';
+
+const execAsync = promisify(exec);
 
 const prisma = new PrismaClient();
 const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -25,6 +29,123 @@ interface UploadedVideo {
   url: string;
   key: string;
   order: number;
+  duration:number
+}
+
+// Manim Templates and Guidelines
+const MANIM_TEMPLATES = {
+  arrayVisualization: `
+# ARRAY VISUALIZATION TEMPLATE
+array_values = [64, 34, 25, 12, 22]
+array_boxes = []
+
+for i, val in enumerate(array_values):
+    box = Rectangle(width=1.2, height=1.2, color=BLUE, fill_opacity=0.3)
+    number = Text(str(val), color=WHITE, font_size=24)
+    box.add(number)
+    array_boxes.append(box)
+
+array_group = VGroup(*array_boxes).arrange(RIGHT, buff=0.2)
+array_group.move_to(ORIGIN)`,
+
+  sortingVisualization: `
+# SORTING VISUALIZATION TEMPLATE
+def highlight_comparison(box1, box2):
+    self.play(
+        box1.animate.set_fill(RED, opacity=0.5),
+        box2.animate.set_fill(RED, opacity=0.5)
+    )
+    self.wait(1)
+    self.play(
+        box1.animate.set_fill(BLUE, opacity=0.3),
+        box2.animate.set_fill(BLUE, opacity=0.3)
+    )`,
+
+  treeVisualization: `
+# TREE VISUALIZATION TEMPLATE
+root = Circle(radius=0.5, color=BLUE, fill_opacity=0.3)
+root_text = Text("10", color=WHITE, font_size=20)
+root.add(root_text)
+root.move_to(ORIGIN + UP)
+
+left_child = Circle(radius=0.5, color=GREEN, fill_opacity=0.3)
+left_text = Text("5", color=WHITE, font_size=20)
+left_child.add(left_text)
+left_child.move_to(LEFT * 2 + DOWN)`,
+
+  stepByStep: `
+# STEP-BY-STEP TEMPLATE
+steps = ["Step 1: Initialize", "Step 2: Compare", "Step 3: Swap"]
+step_texts = []
+for i, step in enumerate(steps):
+    text = Text(step, font_size=24).to_edge(LEFT)
+    text.shift(DOWN * (i + 1))
+    step_texts.append(text)
+
+for step_text in step_texts:
+    self.play(Write(step_text))
+    self.wait(1)`
+};
+
+const MANIM_GUIDELINES = `
+STRICT MANIM GUIDELINES:
+
+ALLOWED ONLY:
+- Imports: from manim import *
+- Mobjects: Circle, Square, Rectangle, Triangle, Line, Arrow, Dot, Text, MathTex, Axes, NumberLine, VGroup
+- Animations: Create, Write, Transform, FadeIn, FadeOut, DrawBorderThenFill, ShowCreation, ReplacementTransform
+- Directions: LEFT, RIGHT, UP, DOWN, ORIGIN, UL, UR, DL, DR
+- Colors: RED, BLUE, GREEN, YELLOW, WHITE, BLACK, ORANGE, PURPLE, PINK
+
+FORBIDDEN (WILL CAUSE ERRORS):
+- BounceIn, BounceOut, SlideIn, SlideOut, ZoomIn, ZoomOut
+- ThreeDScene, Surface, ParametricSurface
+- Any custom or advanced animations
+
+MANDATORY RULES:
+1. Every scene must have exactly one construct(self) method
+2. Always end with self.wait(2)
+3. Use proper spacing: minimum 1 unit between objects
+4. For arrays/data structures: ALWAYS add visible content inside shapes
+5. Use VGroup for grouping and .arrange() for spacing
+6. Test positions before animating
+
+CONTENT VISIBILITY RULE:
+When creating shapes to represent data:
+box = Rectangle(width=1.2, height=1.2, color=BLUE, fill_opacity=0.3)
+content = Text(str(value), color=WHITE, font_size=24)
+box.add(content)  # This makes content visible inside the box
+`;
+
+// helper funciton for duration calculation
+
+async function getVideoDurationWithFFprobe(videoPath: string): Promise<number> {
+  try {
+    console.log(`Getting duration for: ${videoPath}`);
+    
+    // Use ffprobe to get video duration
+    const { stdout, stderr } = await execAsync(
+      `ffprobe -v quiet -show_entries format=duration -of csv=p=0 "${videoPath}"`
+    );
+    
+    if (stderr) {
+      console.warn(`FFprobe warning for ${videoPath}:`, stderr);
+    }
+    
+    const duration = parseFloat(stdout.trim());
+    
+    if (isNaN(duration) || duration <= 0) {
+      console.warn(`Invalid duration for ${videoPath}, using fallback`);
+      return 10; // fallback duration
+    }
+    
+    console.log(`Duration for ${videoPath}: ${duration} seconds`);
+    return duration;
+    
+  } catch (error) {
+    console.error(`Error getting video duration for ${videoPath}:`, error);
+    return 10; // fallback duration in case of error
+  }
 }
 
 export async function createScenes(req: AuthRequest, res: Response) {
@@ -39,7 +160,11 @@ export async function createScenes(req: AuthRequest, res: Response) {
       });
     }
 
-    // Step 1: Generate Layout Plan from OpenAI
+    // Step 1: Analyze the prompt to determine visualization type
+    const promptAnalysis = analyzePrompt(prompt);
+    console.log("Prompt analysis:", promptAnalysis);
+
+    // Step 2: Generate Layout Plan with specific templates
     console.log("Generating layout plan for prompt:", prompt);
 
     const layoutResponse = await client.chat.completions.create({
@@ -47,48 +172,45 @@ export async function createScenes(req: AuthRequest, res: Response) {
       messages: [
         {
           role: "system",
-          content: `You are a visual layout expert for educational animations. Your job is to create a clear, structured layout plan for Manim animations.
+          content: `You are a visual layout expert for educational animations. Create structured layout plans for Manim animations.
 
-Analyze the given topic and create a detailed layout plan that includes:
-1. Number of scenes (3-5 scenes)
-2. Scene names and purposes
-3. Visual elements for each scene
-4. Object positioning and flow
-5. Animation sequence and timing
+${MANIM_GUIDELINES}
 
-Focus on:
-- Clear visual hierarchy
-- Logical flow between scenes
-- Avoiding overlapping elements
-- Using appropriate spacing and positioning
-- Creating engaging visual storytelling
+Based on the topic type, use appropriate visualization patterns:
+- Arrays/Lists: Use horizontal arrangement with visible numbers
+- Sorting: Show comparison and swapping phases
+- Trees: Use hierarchical node arrangement
+- Algorithms: Show step-by-step progression
 
-Output your response as a structured JSON with this format:
+Output structured JSON:
 {
   "totalScenes": number,
+  "visualizationType": "array|sorting|tree|algorithm|general",
   "scenes": [
     {
       "name": "SceneName",
       "purpose": "What this scene explains",
-      "duration": "seconds",
       "elements": [
         {
-          "type": "text/shape/diagram",
-          "content": "what to show",
-          "position": "where to place it",
-          "animation": "how to animate it"
+          "type": "array|shape|text|diagram",
+          "content": "specific values or text",
+          "position": "exact position",
+          "spacing": "buffer distance"
         }
-      ],
-      "layout": "overall layout description"
+      ]
     }
-  ],
-  "overallFlow": "how scenes connect together"
+  ]
 }`,
         },
         {
           role: "user",
-          content: `Create a detailed layout plan for animating this topic: "${prompt}".
-Make sure each scene has a clear purpose and the visual elements are well-organized without overlapping.`,
+          content: `Create a detailed layout plan for: "${prompt}".
+          
+Focus on:
+- Clear content visibility (no empty boxes)
+- Proper spacing between elements
+- Logical flow between scenes
+- Appropriate visualization type for the topic`,
         },
       ],
       max_tokens: 1500,
@@ -97,7 +219,7 @@ Make sure each scene has a clear purpose and the visual elements are well-organi
     const layoutContent = layoutResponse.choices[0].message.content || "";
     console.log("Layout plan generated:", layoutContent);
 
-    // Extract JSON from the layout response
+    // Extract and parse layout
     const layoutMatch = layoutContent.match(/```json\s*([\s\S]*?)```/i) || layoutContent.match(/\{[\s\S]*\}/);
     let layoutPlan;
     
@@ -105,73 +227,114 @@ Make sure each scene has a clear purpose and the visual elements are well-organi
       try {
         layoutPlan = JSON.parse(layoutMatch[1] || layoutMatch[0]);
       } catch (e) {
-        // If JSON parsing fails, use the raw content as context
-        layoutPlan = { rawLayout: layoutContent };
+        console.warn("Layout parsing failed, using fallback");
+        layoutPlan = { 
+          totalScenes: 3, 
+          visualizationType: promptAnalysis.type,
+          rawLayout: layoutContent 
+        };
       }
     } else {
-      layoutPlan = { rawLayout: layoutContent };
+      layoutPlan = { 
+        totalScenes: 3, 
+        visualizationType: promptAnalysis.type,
+        rawLayout: layoutContent 
+      };
     }
 
-    // Step 2: Generate Manim Code based on Layout
-    console.log("Generating Manim code based on layout plan...");
+    // Step 3: Generate Manim Code with appropriate templates
+    console.log("Generating Manim code with templates...");
 
+    const relevantTemplate = getRelevantTemplate(layoutPlan.visualizationType || promptAnalysis.type);
+    
     const codeResponse = await client.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
         {
           role: "system",
-          content: `You are a Manim code generator that creates clean, organized animations based on layout plans.
+          content: `You are a Manim code generator. Generate working, clean animations following these guidelines:
 
-Follow these strict rules:
-1. Only use basic Manim classes: Scene, Circle, Square, Triangle, Rectangle, Text, Axes, Line, Arrow, Dot
-2. Only use animations: Create, Write, Transform, FadeIn, FadeOut, DrawBorderThenFill
-3. Always use 'from manim import *' as the second line
-4. Each scene must have one construct(self) method and end with self.wait(2)
-5. DO NOT use overlapping positions — use .to_edge(), .shift(), .next_to() smartly to arrange objects clearly
-6. For multiple objects, align them horizontally or vertically using VGroup/HGroup and use .arrange(DIR)
-7. Space out items with buff or .shift() so they don't collide
-8. Limit on-screen text to 3–4 lines max at once
-9. NEVER use 3D scenes or advanced features — keep it 2D and simple and always use basic function that are easy to render
-10. Every scene must be visually distinct and organized
-11. Follow the provided layout plan exactly for positioning and flow
-12. Use proper spacing (buff=0.5 or more) between elements
-13. Position elements using the layout guidance provided
-14. In case of Data Structures, always ensure that the numerical value is present there. For example, while writing an array display value inside it and not just array containers. 
+${MANIM_GUIDELINES}
 
-Generate complete, runnable Python code that implements the layout plan precisely.`,
+TEMPLATES TO USE:
+${relevantTemplate}
+
+CRITICAL REQUIREMENTS:
+1. Always use the provided templates as your base
+2. Ensure all shapes have visible content inside them
+3. Use proper spacing with VGroup and .arrange()
+4. Follow the exact animation classes listed above
+5. Every scene must end with self.wait(2)
+6. No comments in the final code
+
+EXAMPLE FOR ARRAYS:
+\`\`\`python
+from manim import *
+
+class ArrayScene(Scene):
+    def construct(self):
+        title = Text("Array Example").to_edge(UP)
+        
+        # Create array with visible content
+        values = [5, 3, 8, 1, 9]
+        boxes = []
+        
+        for val in values:
+            box = Rectangle(width=1.2, height=1.2, color=BLUE, fill_opacity=0.3)
+            number = Text(str(val), color=WHITE, font_size=24)
+            box.add(number)
+            boxes.append(box)
+        
+        array_group = VGroup(*boxes).arrange(RIGHT, buff=0.2)
+        
+        self.play(Write(title))
+        self.play(Create(array_group))
+        self.wait(2)
+\`\`\`
+
+Generate complete Python code following this exact pattern.`,
         },
         {
           role: "user",
-          content: `Generate a modular Manim script for the topic: "${prompt}".
+          content: `Generate a complete Manim script for: "${prompt}"
 
-Use this layout plan to guide your code generation:
+Layout Plan:
 ${JSON.stringify(layoutPlan, null, 2)}
 
-Create exactly the number of scenes specified in the layout plan, with the exact names and purposes described.
-Follow the element positioning and animation sequences from the layout plan.
-Do not include any comments. Output the full Python script with import statements and multiple scene classes.
-Each scene should implement the layout and elements specified in the plan.
-Make sure each class name matches the scene names from the layout plan.`,
+Requirements:
+- Use the provided templates as your foundation
+- Create ${layoutPlan.totalScenes || 3} scenes
+- Ensure all data structures show actual values
+- Use proper spacing and positioning
+- Include proper imports and scene structure
+- Make sure content is visible inside shapes
+
+Focus on the visualization type: ${layoutPlan.visualizationType || promptAnalysis.type}`,
         },
       ],
-      max_tokens: 2000,
+      max_tokens: 2500,
     });
 
     const rawContent = codeResponse.choices[0].message.content || "";
+    console.log("Raw AI response:", rawContent);
 
-    // Extract only the Python code inside the ```python block
+    // Extract Python code
     const match = rawContent.match(/```python\s*([\s\S]*?)```/i);
     if (!match || !match[1]) {
       throw new Error("No valid Python code block found in AI response.");
     }
 
-    const manimCode = match[1].trim();
+    let manimCode = match[1].trim();
     console.log("Extracted Manim Code:\n", manimCode);
 
-    // Step 3: Render Manim Code
+    // Step 4: Validate and clean the code
+    console.log("Validating and cleaning Manim code...");
+    manimCode = validateAndCleanManimCode(manimCode);
+    console.log("Cleaned Manim Code:\n", manimCode);
+
+    // Step 5: Render Manim Code
     console.log("Starting Manim rendering...");
-    const cleanedCode = fixOverlapsInManimCode(manimCode);
-    const renderResult = await runManimCode(cleanedCode);
+    const renderResult = await runManimCode(manimCode);
     console.log(
       `Rendering completed. Animation ID: ${renderResult.animationId}, Videos: ${renderResult.videos.length}`
     );
@@ -180,21 +343,19 @@ Make sure each class name matches the scene names from the layout plan.`,
       throw new Error("No videos were generated during rendering");
     }
 
-    // Step 4: Upload all videos to S3 with organized structure
-    console.log("Starting S3 uploads...");
+    // Step 6: Upload videos to S3 (same as before)
+    console.log("Starting S3 uploads with duration calculation...");
     const uploadPromises = renderResult.videos.map(async (video, index) => {
       try {
-        console.log(
-          `Uploading video ${index + 1}/${renderResult.videos.length}: ${video.scene}`
-        );
+        console.log(`Processing video ${index + 1}/${renderResult.videos.length}: ${video.scene}`);
 
-        // Verify file exists before upload
         if (!fs.existsSync(video.path)) {
           throw new Error(`Video file not found: ${video.path}`);
         }
 
-        const fileStats = fs.statSync(video.path);
-        console.log(`File size: ${fileStats.size} bytes`);
+        // Calculate actual video duration using ffprobe
+        const videoDuration = await getVideoDurationWithFFprobe(video.path);
+        console.log(`Video ${video.scene} duration: ${videoDuration} seconds`);
 
         const fileStream = fs.createReadStream(video.path);
         const fileName = `Anibot/${renderResult.animationId}/${video.scene}.mp4`;
@@ -208,68 +369,47 @@ Make sure each class name matches the scene names from the layout plan.`,
           Metadata: {
             "animation-id": renderResult.animationId,
             "scene-name": video.scene,
+            "duration": videoDuration.toString(),
             "upload-timestamp": new Date().toISOString(),
           },
         };
 
         const uploadResult = await s3.upload(uploadParams).promise();
-        console.log(
-          `Successfully uploaded: ${video.scene} -> ${uploadResult.Location}`
-        );
+        console.log(`Successfully uploaded: ${video.scene} -> ${uploadResult.Location}`);
 
         return {
           sceneName: video.scene,
           url: uploadResult.Location,
           key: uploadResult.Key,
           order: index + 1,
+          duration: videoDuration, // Include actual duration
         } as UploadedVideo;
+        
       } catch (uploadError) {
         console.error(`Failed to upload video ${video.scene}:`, uploadError);
-        const errorMessage =
-          uploadError instanceof Error
-            ? uploadError.message
-            : String(uploadError);
-        throw new Error(
-          `Upload failed for scene ${video.scene}: ${errorMessage}`
-        );
+        const errorMessage = uploadError instanceof Error ? uploadError.message : String(uploadError);
+        throw new Error(`Upload failed for scene ${video.scene}: ${errorMessage}`);
       }
     });
 
-    // Wait for all uploads to complete
     const uploadResults = await Promise.all(uploadPromises);
     console.log(`All ${uploadResults.length} videos uploaded successfully`);
 
-    // Step 5: Clean up local video files
+
+    // Step 7: Clean up local files
     console.log("Cleaning up local files...");
     const cleanupPromises = renderResult.videos.map(async (video) => {
       try {
         await fs.promises.unlink(video.path);
         console.log(`Deleted local file: ${video.path}`);
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : String(err);
-        console.warn(
-          `Failed to delete local file ${video.path}:`,
-          errorMessage
-        );
+        console.warn(`Failed to delete local file ${video.path}:`, err);
       }
     });
 
-    await Promise.allSettled(cleanupPromises); // Use allSettled to not fail if some deletions fail
+    await Promise.allSettled(cleanupPromises);
 
-    // Step 6: Return success response
-    const response_data = {
-      success: true,
-      message: "All scenes rendered and uploaded successfully",
-      animationId: renderResult.animationId,
-      videos: uploadResults.sort((a, b) => a.order - b.order),
-      totalVideos: uploadResults.length,
-      s3Path: `Anibot/${renderResult.animationId}/`,
-      timestamp: new Date().toISOString(),
-      layoutPlan: layoutPlan, // Include layout plan in response for debugging
-    };
-
-    // DB actions
-    //create the project
+    // Step 8: Database operations
     const userId = req.user;
     const project = await prisma.project.create({
       data: {
@@ -277,30 +417,62 @@ Make sure each class name matches the scene names from the layout plan.`,
         title: prompt,
         userId: userId,
         urls: JSON.parse(JSON.stringify(uploadResults)),
-        chatId: String(randomBytes(256)),
+        chatId: Math.random().toString(36).substring(2, 10)
       },
     });
 
-    const message1 = await prisma.message.create({
-      data: {
-        sender: Sender.user,
-        content: prompt,
-        projectId: renderResult.animationId,
-      },
-    });
-    const message2 = await prisma.message.create({
-      data: {
-        sender: Sender.ai,
-        content: `Generating scenes for your prompt: "${prompt}"`,
-        projectId: renderResult.animationId,
-      },
-    });
 
-    res.status(200).json(response_data);
+// Step 9: Transform videos to MediaFile format and return success response
+const transformedVideos: any = uploadResults.map((video, index) => {
+  const videoDuration = video.duration; // Default duration in seconds - you may want to get actual duration
+  const startPosition = index * videoDuration; // Sequential positioning
+  
+  return {
+    id: `${renderResult.animationId}_${video.sceneName}`,
+    fileName: `${video.sceneName}.mp4`,
+    fileId: video.key,
+    type: 'video' ,
+    startTime: 0, // Start from beginning of source video
+    src: video.url,
+    endTime: videoDuration, // End of source video
+    positionStart: startPosition, // Position in final merged video
+    positionEnd: startPosition + videoDuration,
+    includeInMerge: true,
+    playbackSpeed: 1.0,
+    volume: 1.0,
+    zIndex: index + 1,
+    // Optional visual settings - using defaults
+    x: 0,
+    y: 0,
+    width: 1920, // Default HD width
+    height: 1080, // Default HD height
+    rotation: 0,
+    opacity: 1.0,
+    // No crop by default
+    crop: undefined
+  };
+});
+
+const response_data = {
+  success: true,
+  message: "All scenes rendered and uploaded successfully",
+  animationId: renderResult.animationId,
+  videos: transformedVideos, // Now using MediaFile[] format
+  totalVideos: transformedVideos.length,
+  s3Path: `Anibot/${renderResult.animationId}/`,
+  timestamp: new Date().toISOString(),
+  layoutPlan: layoutPlan,
+  generatedCode: manimCode,
+  // Additional metadata for video editor compatibility
+  totalDuration: transformedVideos.reduce((sum:any, video:any) => sum + (video.positionEnd - video.positionStart), 0),
+  resolution: { width: 1920, height: 1080 },
+  fps: 30
+};
+
+res.status(200).json(response_data);
   } catch (error) {
     console.error("Error during scene creation:", error);
 
-    // Return detailed error information
     const errorMessage = error instanceof Error ? error.message : String(error);
     const errorResponse = {
       success: false,
@@ -312,13 +484,93 @@ Make sure each class name matches the scene names from the layout plan.`,
     if (errorMessage.includes("timeout")) {
       res.status(408).json({ ...errorResponse, error: "Rendering timeout" });
     } else if (errorMessage.includes("No Scene classes found")) {
-      res
-        .status(400)
-        .json({ ...errorResponse, error: "Invalid Manim code generated" });
+      res.status(400).json({ ...errorResponse, error: "Invalid Manim code generated" });
     } else if (errorMessage.includes("Upload failed")) {
       res.status(502).json({ ...errorResponse, error: "S3 upload failed" });
     } else {
       res.status(500).json(errorResponse);
     }
   }
+}
+
+// Helper functions
+function analyzePrompt(prompt: string): { type: string; keywords: string[] } {
+  const lowerPrompt = prompt.toLowerCase();
+  
+  if (lowerPrompt.includes('sort') || lowerPrompt.includes('bubble') || lowerPrompt.includes('merge') || lowerPrompt.includes('quick')) {
+    return { type: 'sorting', keywords: ['sort', 'array', 'compare', 'swap'] };
+  }
+  
+  if (lowerPrompt.includes('array') || lowerPrompt.includes('list')) {
+    return { type: 'array', keywords: ['array', 'list', 'elements', 'index'] };
+  }
+  
+  if (lowerPrompt.includes('tree') || lowerPrompt.includes('binary')) {
+    return { type: 'tree', keywords: ['tree', 'node', 'binary', 'hierarchy'] };
+  }
+  
+  if (lowerPrompt.includes('algorithm') || lowerPrompt.includes('step')) {
+    return { type: 'algorithm', keywords: ['algorithm', 'step', 'process', 'method'] };
+  }
+  
+  return { type: 'general', keywords: ['concept', 'explanation', 'visual'] };
+}
+
+function getRelevantTemplate(visualizationType: string): string {
+  switch (visualizationType) {
+    case 'sorting':
+      return `${MANIM_TEMPLATES.arrayVisualization}\n${MANIM_TEMPLATES.sortingVisualization}`;
+    case 'array':
+      return MANIM_TEMPLATES.arrayVisualization;
+    case 'tree':
+      return MANIM_TEMPLATES.treeVisualization;
+    case 'algorithm':
+      return MANIM_TEMPLATES.stepByStep;
+    default:
+      return MANIM_TEMPLATES.arrayVisualization;
+  }
+}
+
+function validateAndCleanManimCode(code: string): string {
+  console.log("Validating Manim code...");
+  
+  // List of forbidden animations that cause NameError
+  const forbiddenAnimations = [
+    'BounceIn', 'BounceOut', 'SlideIn', 'SlideOut', 'ZoomIn', 'ZoomOut',
+    'RotateIn', 'RotateOut', 'FlipIn', 'FlipOut', 'RollIn', 'RollOut',
+    'Pulse', 'Flash', 'Shake', 'Wiggle', 'Wobble'
+  ];
+  
+  // Replace forbidden animations with safe alternatives
+  let cleanedCode = code;
+  
+  forbiddenAnimations.forEach(forbidden => {
+    const regex = new RegExp(`\\b${forbidden}\\b`, 'g');
+    cleanedCode = cleanedCode.replace(regex, 'FadeIn');
+  });
+  
+  // Ensure proper imports
+  if (!cleanedCode.includes('from manim import *')) {
+    cleanedCode = 'from manim import *\n\n' + cleanedCode;
+  }
+  
+  // Validate scene classes
+  const sceneClasses = cleanedCode.match(/class\s+\w+\(Scene\):/g);
+  if (!sceneClasses || sceneClasses.length === 0) {
+    throw new Error("No valid Scene classes found in generated code");
+  }
+  
+  // Ensure all scenes have construct method
+  const constructMethods = cleanedCode.match(/def construct\(self\):/g);
+  if (!constructMethods || constructMethods.length !== sceneClasses.length) {
+    console.warn("Mismatch between scene classes and construct methods");
+  }
+  
+  // Ensure all scenes end with wait
+  if (!cleanedCode.includes('self.wait(')) {
+    console.warn("Some scenes may not have proper wait statements");
+  }
+  
+  console.log(`Validated ${sceneClasses.length} scene classes`);
+  return cleanedCode;
 }
