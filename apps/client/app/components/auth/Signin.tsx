@@ -47,7 +47,7 @@ export default function SigninCard() {
     })
   return (
     <div className="relative min-h-screen flex items-center justify-center overflow-hidden px-4">
-      {/* <BackgroundBeams /> */}
+      <BackgroundBeams />
 
       <div className="relative z-10 w-full max-w-md bg-gray-800 text-white p-8 rounded-xl shadow-2xl border border-gray-700">
         <h2 className="text-2xl font-bold mb-6 text-center">Sign In to Anibot</h2>

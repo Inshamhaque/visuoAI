@@ -102,18 +102,12 @@ export default function Project({ params }: { params: { id: string } }) {
             }
             <div className="flex flex-1 overflow-hidden">
                 {/* Left Sidebar - Buttons */}
-                <div className="flex-[0.1] min-w-[60px] max-w-[100px] border-r border-gray-700 overflow-y-auto p-4">
-                    <div className="flex flex-col space-y-2">
+                <div className="flex-[0.1] mt-16 min-w-[60px] max-w-[100px] border-r border-gray-700 overflow-y-auto p-4">
+                    <div className="mt-2 flex flex-col space-y-2 ">
                         <HomeButton />
                         <TextButton onClick={() => handleFocus("text")} />
                         {/* <LibraryButton onClick={() => handleFocus("media")} /> */}
                         <ExportButton onClick={() => handleFocus("export")} />
-                            <div onClick={()=>{setIsOpen(true)
-                            }} >
-                                <HamburgerIcon  />
-                            </div>
-                        
-                        
                     </div>
                 </div>
 

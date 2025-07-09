@@ -1,7 +1,11 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { X, Menu, Home, User, Settings, Mail, Bell, Search } from 'lucide-react';
-import { cn } from '../../lib/utils';
+import { BACKEND_URL, cn } from '../../lib/utils';
 import { Dispatch, SetStateAction } from 'react';
+import axios from 'axios';
+import toast from 'react-hot-toast';
+import { tree } from 'next/dist/build/templates/app-page';
+import { useRouter } from 'next/navigation';
 
 
 interface SidebarItem {
@@ -34,17 +38,42 @@ export const OverlaySidebar: React.FC<OverlaySidebarProps> = ({
   setIsOpen 
 }) => {
 //   const [isOpen, setIsOpen] = useState(false);
+  const [loading, setLoading] = useState(true)
+  const [projects,setProjects] = useState([]);
+  const [error,setError] = useState<boolean>(false)
+  const router = useRouter();
+  useEffect(()=>{
+    const fetch = async()=>{
+      try{
+      const response = await axios.get(`${BACKEND_URL}/user/projects`,{
+        headers:{
+          Authorization : `Bearer ${localStorage.getItem("token")}`
+        }
+      })
+      if(response.data.status==411){
+        return toast.error("No projects are there",{
+          position:"top-right"
+        })
+      }
+      setProjects(response.data.projects);
+      setLoading(false)
+    }
+      catch(e){
+        toast.error('Some error fetching ',{
+          position:"top-right"
+        })
+        setError(true)
+      }
+    }
+    fetch()
+  },[])
 
   const toggleSidebar = () => setIsOpen(!isOpen);
   const closeSidebar = () => setIsOpen(false);
 
   const handleItemClick = (item: SidebarItem) => {
-    if (item.onClick) {
-      item.onClick();
-    } else if (item.href) {
-      window.location.href = item.href;
-    }
-    closeSidebar();
+    router.push(`/chat-editor/${item.id}`);
+    localStorage.setItem("projectId",item.id);
   };
 
   return (
@@ -58,7 +87,7 @@ export const OverlaySidebar: React.FC<OverlaySidebarProps> = ({
         )}
         aria-label="Toggle sidebar"
       >
-        <Menu className="h-5 w-5 text-gray-700" />
+        <Menu className="h-10 w-10 text-gray-700" />
       </button>
 
       {/* Backdrop */}
@@ -88,24 +117,23 @@ export const OverlaySidebar: React.FC<OverlaySidebarProps> = ({
             <X className="h-5 w-5 text-gray-200" />
           </button>
         </div>
+        {loading?
+        <div>laoding...</div>:
 
-        {/* Navigation Items */}
         <nav className="p-4 space-y-2">
-          {items.map((item, index) => (
+          {projects.map((item, index) => (
             <button
               key={index}
               onClick={() => handleItemClick(item)}
               className="w-full flex items-center gap-4 p-3 text-left hover:bg-gray-50 rounded-lg transition-all duration-200 hover:translate-x-1 group"
             >
-              <div className="p-2 bg-gray-900 rounded-lg group-hover:bg-blue-100 group-hover:text-blue-600 transition-colors duration-200">
-                <item.icon className="h-5 w-5" />
-              </div>
+              
               <span className="font-medium text-gray-700 group-hover:text-gray-900">
-                {item.label}
+                {item.title}
               </span>
             </button>
           ))}
-        </nav>
+        </nav>}
 
         
       </div>

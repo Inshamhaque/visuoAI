@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { MoveRight } from "lucide-react";
 import axios from "axios";
@@ -12,12 +12,21 @@ import { ProjectState } from "./types/types";
 import { addProject } from "./store/slices/projectsSlice";
 import {  useAppSelector, getFile } from "./store";
 import { setFilesID, setMediaFiles } from "./store/slices/projectSlice";
+import Image from "next/image";
+import Screenshot from "@/assets/Screenshot_2025-07-10_at_2.25.40_AM-removebg-preview.png"
 export default function Home() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [prompt, setPrompt] = useState("");
   const dispatch = useAppDispatch();
   const { mediaFiles, filesID } = useAppSelector((state) => state.projectState);
+  const [isSigned,seisSigned] = useState(false);
+  useEffect(()=>{
+    const token = localStorage.getItem("token");
+    if(token){
+      seisSigned(true);
+    }
+  },[])
 
   const onClickHandler = async () => {
     if (!prompt.trim()) return;
@@ -131,19 +140,33 @@ export default function Home() {
 
   return (
     <div className="flex justify-between min-h-screen bg-gradient-to-tr from-gray-800 to-black text-white flex flex-col items-center justify-center px-4 relative">
-      {/* Top Right Nav Buttons */}
-      <div className="absolute top-4 right-4 flex gap-2">
-        <button onClick={()=>{
-          router.push('/auth/signin')
-        }} className="text-sm text-white/70 hover:text-white">
-          Sign In
-        </button>
-        <button onClick={()=>{
-          router.push('/auth/signup')
-        }} className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-1.5 rounded">
-          Get Started
-        </button>
+      <div className="w-full flex items-center justify-between px-4 py-3 absolute top-0 left-0 z-50">
+        {/* Left: Logo or Image */}
+        <div className="flex items-center">
+          <Image src={Screenshot} alt="Logo" className="h-20 w-auto" />
+        </div>
+
+        {/* Right: Buttons */}
+        <div className="flex gap-3">
+          {!isSigned && (
+            <button
+              onClick={() => router.push('/auth/signin')}
+              className="text-sm text-white/70 hover:text-white transition"
+            >
+              Sign In
+            </button>
+          )}
+          {!isSigned && (
+            <button
+              onClick={() => router.push('/auth/signup')}
+              className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-1.5 rounded transition"
+            >
+              Get Started
+            </button>
+          )}
+        </div>
       </div>
+
       {/* Headline */}
       <h1 className="text-4xl sm:text-5xl font-bold text-center mb-4">
         What do you want to animate?
