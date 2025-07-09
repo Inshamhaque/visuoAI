@@ -80,6 +80,9 @@ export default function Home() {
                 includeSubtitles: false,
             },
         };
+        // debug statement
+        console.log(videos)
+        localStorage.setItem("projectId",animationId);
 
         await storeProject(newProject);
         dispatch(addProject(newProject));
@@ -89,46 +92,23 @@ export default function Home() {
       
         // set media files here simply update the existing media files, with the one recieved from the backend
         // also create the file db instance in the IDB
-        const updatedMedia = [...mediaFiles];
-        const updatedFiles = [...filesID || []]
 
-        // const file = await getFile(fileId);
-        const mediaId = crypto.randomUUID();
+        const updatedMedia = [];
+        const updatedFiles = [...filesID || []];
 
-        if (true) {
-            // const relevantClips = mediaFiles.filter(clip => clip.type === categorizeFile(file.type));
-            // const lastEnd = relevantClips.length > 0
-            //     ? Math.max(...relevantClips.map(f => f.positionEnd))
-            //     : 0;
-            videos.map((video:any)=>{
-              const newID = crypto.randomUUID();
-              storeFile(video,newID)
-              updatedMedia.push(video);
-              updatedFiles.push(newID);
-            })
-            // updatedMedia.push({
-            //     id: mediaId,
-            //     fileName: file.name,
-            //     fileId: fileId,
-            //     startTime: 0,
-            //     endTime: 30,
-            //     src: URL.createObjectURL(file),
-            //     positionStart: lastEnd,
-            //     positionEnd: lastEnd + 30,
-            //     includeInMerge: true,
-            //     x: 0,
-            //     y: 0,
-            //     width: 1920,
-            //     height: 1080,
-            //     rotation: 0,
-            //     opacity: 100,
-            //     crop: { x: 0, y: 0, width: 1920, height: 1080 },
-            //     playbackSpeed: 1,
-            //     volume: 100,
-            //     type: categorizeFile(file.type),
-            //     zIndex: 0,
-            // });
+        // Process videos sequentially to avoid IndexedDB transaction conflicts
+        for (const video of videos) {
+          const newID = crypto.randomUUID();
+          try {
+            // await storeFile(video, newID);
+            updatedMedia.push(video);
+            updatedFiles.push(newID);
+          } catch (error) {
+            console.error('Error storing video:', error);
+            // Continue with other videos even if one fails
+          }
         }
+
         dispatch(setMediaFiles(updatedMedia));
         dispatch(setFilesID(updatedFiles));
         toast.success('Media added successfully.');

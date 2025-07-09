@@ -5,6 +5,7 @@ import { openDB } from 'idb';
 import projectStateReducer from './slices/projectSlice';
 import projectsReducer from './slices/projectsSlice';
 import toast from 'react-hot-toast';
+import { MediaFile } from '../types/types';
 
 // Create IndexedDB database for files and projects
 const setupDB = async () => {
@@ -44,7 +45,7 @@ const saveState = (state: any) => {
 };
 
 // File storage functions
-export const storeFile = async (file: File, fileId: string) => {
+export const storeFile = async (file: MediaFile, fileId: string) => {
     if (typeof window === 'undefined') return null;
     try {
         const db = await setupDB();

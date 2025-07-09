@@ -422,11 +422,14 @@ Focus on the visualization type: ${layoutPlan.visualizationType || promptAnalysi
     });
 
 
+  let prevEnd = -1;
 // Step 9: Transform videos to MediaFile format and return success response
 const transformedVideos: any = uploadResults.map((video, index) => {
   const videoDuration = video.duration; // Default duration in seconds - you may want to get actual duration
-  const startPosition = index * videoDuration; // Sequential positioning
-  
+  const startPosition = prevEnd; // Sequential positioning
+  prevEnd = startPosition + video.duration;
+  // index == 0 then sP = 0;
+  // index == 1 then sP = 
   return {
     id: `${renderResult.animationId}_${video.sceneName}`,
     fileName: `${video.sceneName}.mp4`,
@@ -439,17 +442,22 @@ const transformedVideos: any = uploadResults.map((video, index) => {
     positionEnd: startPosition + videoDuration,
     includeInMerge: true,
     playbackSpeed: 1.0,
-    volume: 1.0,
-    zIndex: index + 1,
+    volume: 100,
+    zIndex:0,
     // Optional visual settings - using defaults
     x: 0,
     y: 0,
     width: 1920, // Default HD width
     height: 1080, // Default HD height
     rotation: 0,
-    opacity: 1.0,
+    opacity: 100,
     // No crop by default
-    crop: undefined
+    crop: {
+      x: 0,
+      y: 0,
+      width: 960,
+      height: 540,
+    },
   };
 });
 

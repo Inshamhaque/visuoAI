@@ -1,5 +1,5 @@
 "use client";
-import { useAppDispatch, useAppSelector } from "@/app/store";
+import { getFile, getProject, useAppDispatch, useAppSelector } from "@/app/store";
 import { SequenceItem } from "./sequence-item";
 import { MediaFile, TextElement } from "@/app/types/types";
 import { useCurrentFrame } from "remotion";
@@ -15,84 +15,44 @@ const Composition = () => {
   const previousTime = useRef(0);
 
   useEffect(() => {
-    const demoMediaFiles: MediaFile[] = [
-  {
-    id: "video-1",
-    fileName: "sample-video.mp4",
-    fileId: "demo-file-1",
-    type: "video",
-    src: "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-    startTime: 0,
-    endTime: 10,
-    positionStart: 0,
-    positionEnd: 10,
-    includeInMerge: true,
-    playbackSpeed: 1,
-    volume: 100,
-    zIndex: 0,
-    x: 0,
-    y: 0,
-    width: 1920,
-    height: 1080,
-    opacity: 100,
-    rotation: 0,
-    crop: {
-      x: 0,
-      y: 0,
-      width: 960,
-      height: 540,
-    },
-  },
-  {
-    id: "image-1",
-    fileName: "sample-image.mp4",
-    fileId: "demo-file-2",
-    type: "video",
-    src: "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
-    startTime: 0,
-    endTime: 10,
-    positionStart: 5,
-    positionEnd: 15,
-    includeInMerge: true,
-    playbackSpeed: 1,
-    volume: 0,
-    zIndex: 2,
-    x: 300,
-    y: 100,
-    width: 300,
-    height: 300,
-    opacity: 100,
-    rotation: 0,
-    crop: {
-      x: 0,
-      y: 0,
-      width: 300,
-      height: 300,
-    },
-  },
-  {
-    id: "audio-1",
-    fileName: "sample-audio.mp4",
-    fileId: "demo-file-3",
-    type: "audio",
-    src: "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
-    startTime: 0,
-    endTime: 20,
-    positionStart: 0,
-    positionEnd: 20,
-    includeInMerge: true,
-    playbackSpeed: 1,
-    volume: 50,
-    zIndex: 0,
-    x: 0,
-    y: 0,
-    width: 0,
-    height: 0,
-    opacity: 100,
-    rotation: 0,
-  }
-];
-    dispatch(setMediaFiles(demoMediaFiles));
+  //   const demoMediaFiles: MediaFile[] = [
+  // {
+  //   id: "video-1",
+  //   fileName: "sample-video.mp4",
+  //   fileId: "demo-file-1",
+  //   type: "video",
+  //   src: "https://decentralized-web2-quickpay.s3.ap-south-1.amazonaws.com/Anibot/addca3ee-369e-4f1b-978d-81a1b0058453/SolarSystemModel.mp4",
+  //   startTime: 0,
+  //   endTime: 10,
+  //   positionStart: 0,
+  //   positionEnd: 10,
+  //   includeInMerge: true,
+  //   playbackSpeed: 1,
+  //   volume: 100,
+  //   zIndex: 0,
+  //   x: 0,
+  //   y: 0,
+  //   width: 1920,
+  //   height: 1080,
+  //   opacity: 100,
+  //   rotation: 0,
+  //   crop: {
+  //     x: 0,
+  //     y: 0,
+  //     width: 960,
+  //     height: 540,
+  //   },
+  // },]
+  // dispatch(setMediaFiles(demoMediaFiles));
+    const fetchVideos = async()=>{
+      const id = localStorage.getItem("projectId")??""
+      const preojectStatus = await getProject(id);
+      // clear exisiting media files
+      dispatch(setMediaFiles([]));
+      const demoMediaFiles = projectState.mediaFiles;
+      dispatch(setMediaFiles(demoMediaFiles));
+    }
+    fetchVideos();
   }, [dispatch]);
 
   const projectState = useAppSelector((state) => state.projectState);

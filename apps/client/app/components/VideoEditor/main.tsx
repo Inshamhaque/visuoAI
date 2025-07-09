@@ -51,25 +51,24 @@ export default function Project({ params }: { params: { id: string } }) {
         loadProject();
     }, [id, dispatch]);
 
-    // set project state from with the current project id
-    useEffect(() => {
-        const loadProject = async () => {
-            if (currentProjectId) {
-                const project = await getProject(currentProjectId);
-                if (project) {
-                    dispatch(rehydrate(project));
+    // useEffect(() => {
+    //     const loadProject = async () => {
+    //         if (currentProjectId) {
+    //             const project = await getProject(currentProjectId);
+    //             if (project) {
+    //                 dispatch(rehydrate(project));
 
-                    dispatch(setMediaFiles(await Promise.all(
-                        project.mediaFiles.map(async (media: MediaFile) => {
-                            const file = await getFile(media.fileId);
-                            return { ...media, src: URL.createObjectURL(file) };
-                        })
-                    )));
-                }
-            }
-        };
-        loadProject();
-    }, [dispatch, currentProjectId]);
+    //                 dispatch(setMediaFiles(await Promise.all(
+    //                     project.mediaFiles.map(async (media: MediaFile) => {
+    //                         const file = await getFile(media.fileId);
+    //                         return { ...media, src: URL.createObjectURL(file) };
+    //                     })
+    //                 )));
+    //             }
+    //         }
+    //     };
+    //     loadProject();
+    // }, [dispatch, currentProjectId]);
 
 
     // save
