@@ -1,4 +1,4 @@
-# 🎬 AniBot — AI-Powered Educational Animation Platform
+# 🎬 VisuoAI — AI-Powered Educational Animation Platform
 
 **AniBot** is a next-gen educational content creation tool that blends AI chat interfaces with a professional-grade animation studio. Powered by [Manim](https://www.manim.community/), it allows educators, students, and developers to create animated videos for math, science, programming, and beyond — all in one powerful web interface.
 
@@ -6,7 +6,7 @@
 
 ## 🌟 Overview
 
-AniBot is designed to:
+VisuoAI is designed to:
 - 🎓 Automate educational content generation
 - ✨ Render Manim-powered math/science animations
 - 🎬 Offer a professional video editing suite in the browser
@@ -194,5 +194,5 @@ If you’re passionate about:
 
 ---
 
-> **AniBot** is redefining educational content creation — one animation at a time.
+> **VisuoAI is redefining educational content creation — one animation at a time.
 
