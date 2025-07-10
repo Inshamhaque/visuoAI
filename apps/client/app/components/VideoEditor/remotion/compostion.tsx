@@ -46,10 +46,10 @@ const Composition = () => {
   // dispatch(setMediaFiles(demoMediaFiles));
     const fetchVideos = async()=>{
       const id = localStorage.getItem("projectId")??""
-      const preojectStatus = await getProject(id);
+      const projectStatus = await getProject(id);
       // clear exisiting media files
       dispatch(setMediaFiles([]));
-      const demoMediaFiles = projectState.mediaFiles;
+      const demoMediaFiles = projectStatus.mediaFiles;
       dispatch(setMediaFiles(demoMediaFiles));
     }
     fetchVideos();

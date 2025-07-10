@@ -1,9 +1,10 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { TextElement, MediaFile, ActiveElement, ExportConfig } from '../../types/types';
 import { ProjectState } from '../../types/types';
+// import  crypto  from "crypto"
 
 export const initialState: ProjectState = {
-    id: crypto.randomUUID(),
+    id: Math.random().toString() ,
     projectName: '',
     createdAt: new Date().toISOString(),
     lastModified: new Date().toISOString(),

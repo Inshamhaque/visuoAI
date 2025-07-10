@@ -154,11 +154,20 @@ export async function createScenes(req: AuthRequest, res: Response) {
 
   try {
     console.log("user is (from the middleware)", req.user);
-    if (!req.user) {
-      return res.status(411).json({
-        message: "User not authenticated correctly. Try again later",
-      });
-    }
+    
+    // check if the user has not used the free project limit
+    const projects  = await prisma.project.findMany({
+      where:{
+        userId:req.user
+      }
+    })
+    // TODO : add this after testing
+    // if(projects.length==1){
+    //   return res.json({
+    //     message : "Free plan used up",
+    //     status:411
+    //   })
+    // }
 
     // Step 1: Analyze the prompt to determine visualization type
     const promptAnalysis = analyzePrompt(prompt);

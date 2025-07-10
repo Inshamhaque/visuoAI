@@ -22,7 +22,7 @@ import { MediaFile } from "@/app/types/types";
 // import ExportList from "../../../components/editor/AssetsPanel/tools-section/ExportList";
 import Image from "next/image";
 import { HamburgerIcon } from "lucide-react";
-import OverlaySidebar from "../ui/Sidebar";
+import { OverlaySidebar } from "../ui/Sidebar";
 // import ProjectName from "../../../components/editor/player/ProjectName";
 export default function Project({ params }: { params: { id: string } }) {
     const { id } = params || "1234";

@@ -25,7 +25,7 @@ export function authMiddleware(
   try {
     const decoded = jwt.verify(token, "JWT_SECRET") as decodedI;
     req.user = decoded?.userId;
-    console.log(req.user)
+    console.log("from the middleware",req.user)
     next();
   } catch (error) {
     res.json({ error: "Unauthorized - Invalid token",status:401 });

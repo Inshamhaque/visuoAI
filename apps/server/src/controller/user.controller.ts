@@ -81,7 +81,8 @@ export async function signin(req: Request, res: Response) {
   }
 }
 export async function getProjects(req:AuthRequest, res:Response){
-    const { userId } = req.user;
+    const  userId  = req.user;
+    console.log(userId) // debug
     try{
       const projs = await client.project.findMany({
         where:{
