@@ -12,6 +12,7 @@ import { debounce, throttle } from "lodash";
 export default function TextTimeline() {
     const targetRefs = useRef<Record<string, HTMLDivElement | null>>({});
     const { textElements, activeElement, activeElementIndex, timelineZoom } = useAppSelector((state) => state.projectState);
+    console.log("from the text timeline: ",textElements)
     const dispatch = useDispatch();
     const moveableRef = useRef<Record<string, Moveable | null>>({});
 

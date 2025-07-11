@@ -10,7 +10,7 @@ import { store, storeProject, useAppDispatch } from "./store";
 import { ProjectState } from "./types/types";
 import { addProject } from "./store/slices/projectsSlice";
 import { useAppSelector } from "./store";
-import { setFilesID, setMediaFiles } from "./store/slices/projectSlice";
+import { setFilesID, setMediaFiles, setTextElements } from "./store/slices/projectSlice";
 import Image from "next/image";
 import Screenshot from "@/assets/Screenshot_2025-07-10_at_2.25.40_AM-removebg-preview.png";
 
@@ -116,7 +116,7 @@ export default function Home() {
           console.error('Error storing video:', error);
         }
       }
-
+      dispatch(setTextElements([]))
       dispatch(setMediaFiles(updatedMedia));
       dispatch(setFilesID(updatedFiles));
       toast.success('Media added successfully.');

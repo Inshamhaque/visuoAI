@@ -10,7 +10,7 @@ import { getProject, store, storeProject, useAppDispatch } from "../../store";
 import { ProjectState } from "../../types/types";
 import { addProject } from "../../store/slices/projectsSlice";
 import { useAppSelector } from "../../store";
-import { setFilesID, setMediaFiles } from "../../store/slices/projectSlice";
+import { setFilesID, setMediaFiles, setTextElements } from "../../store/slices/projectSlice";
 
 
 interface SidebarItem {
@@ -47,7 +47,8 @@ export const OverlaySidebar: React.FC<OverlaySidebarProps> = ({
   const [error, setError] = useState<boolean>(false);
   const router = useRouter();
   const dispatch = useAppDispatch();
-
+  const { textElements } = useAppSelector((state) => state.projectState);
+  
   useEffect(() => {
     const fetch = async () => {
       try {
@@ -119,6 +120,7 @@ export const OverlaySidebar: React.FC<OverlaySidebarProps> = ({
     
           const updatedMedia = [];
           const updatedFiles = [];
+          const updatedTextFiles = []
     
           for (const video of videos) {
             const newID = crypto.randomUUID();
@@ -131,6 +133,20 @@ export const OverlaySidebar: React.FC<OverlaySidebarProps> = ({
           }
     
           dispatch(setMediaFiles(updatedMedia));
+          // flow be like, we extract the textElements from the Idb istead of reduc reducers
+          const projectId = localStorage.getItem("projectId")??""
+          const projectStatus = await getProject(projectId);
+          const { textElements } = projectStatus;
+          dispatch(setTextElements(textElements));
+          // console.log("project id:",projectId)
+          // const projectState = await getProject(projectId);
+          // console.log("project state",projectState)
+          // dispatch(setTextElements([]))
+          // console.log("current text elemnt before dispatch",textElements)
+          // const textFiles = projectState.textElements;
+          // console.log("after dispatch",textElements)
+          // dispatch(setTextElements(textFiles));
+                    
           // dispatch(setFilesID(updatedFiles));
           // toast.success('Media added successfully.');
           localStorage.setItem("projectId", item.id);

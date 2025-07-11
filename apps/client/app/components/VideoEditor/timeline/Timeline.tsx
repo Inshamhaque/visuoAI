@@ -1,4 +1,4 @@
-import { useAppSelector } from "@/app/store";
+import { getProject, storeProject, useAppSelector } from "@/app/store";
 import { setMarkerTrack, setTextElements, setMediaFiles, setTimelineZoom, setCurrentTime, setIsPlaying, setActiveElement } from "@/app/store/slices/projectSlice";
 import { memo, useCallback, useEffect, useMemo, useRef } from "react";
 import { useDispatch } from "react-redux";
@@ -203,6 +203,41 @@ export const Timeline = () => {
         dispatch(setCurrentTime(clampedTime));
     };
 
+    const handleSave = async () => {
+    try {
+        // Get current state
+        const currentMediaFiles = [...mediaFiles];
+        const currentTextFiles = [...textElements];
+
+        // Fix the typo: "projecId" should be "projectId"
+        const projectId = localStorage.getItem("projectId");
+        
+        if (!projectId) {
+            toast.error('No project ID found');
+            return;
+        }
+
+        // Get the current project state
+        const projectState = await getProject(projectId);
+        
+        if (!projectState) {
+            toast.error('Project not found');
+            return;
+        }
+
+        // Update the project state
+        projectState.mediaFiles = currentMediaFiles;
+        projectState.textElements = currentTextFiles;
+        
+        // Save the updated project state
+        await storeProject(projectState); // Pass the full project state, not just the ID
+        
+        toast.success('Project saved successfully');
+    } catch (error) {
+        console.error('Error saving project:', error);
+        toast.error('Failed to save project');
+    }
+};
     return (
         <div className="flex w-full flex-col gap-2">
             <div className="flex flex-row items-center justify-between gap-12 w-full">
@@ -268,6 +303,14 @@ export const Timeline = () => {
                             src="https://www.svgrepo.com/show/511788/delete-1487.svg"
                         />
                         <span className="ml-2">Delete <span className="text-xs">(Del)</span></span>
+                    </button>
+                    {/* Save State */}
+                    <button
+                        onClick={handleSave}
+                        className="bg-white border rounded-md border-transparent transition-colors flex flex-row items-center justify-center text-gray-800 hover:bg-[#ccc] dark:hover:bg-[#ccc] mt-2 font-medium text-sm sm:text-base h-auto px-2 py-1 sm:w-auto"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-save-icon lucide-save"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
+                        <span className="ml-2">Save State</span>
                     </button>
                 </div>
 

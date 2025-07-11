@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { getFile, storeProject, useAppDispatch, useAppSelector } from "../../store/index";
 import { getProject } from "../../store";
 import { setCurrentProject, updateProject } from "../../store/slices/projectsSlice";
-import { rehydrate, setMediaFiles } from '../../store/slices/projectSlice';
+import { rehydrate, setMediaFiles, setTextElements } from '../../store/slices/projectSlice';
 import { setActiveSection } from "../../store/slices/projectSlice";
 import AddText from '../VideoEditor/AssetsPanel/tools-section/AddText';
 // import AddMedia from '../../../components/editor/AssetsPanel/AddButtons/UploadMedia';
@@ -49,6 +49,17 @@ export default function Project({ params }: { params: { id: string } }) {
             }
         };
         loadProject();
+        const setElements = async()=>{
+            // also set the media Elements correctly
+            // this template is used everyhwere make a fn of this
+            console.log("setElements called")// debug statement
+            const projectId = localStorage.getItem("projectId")??"";
+            const projectState = await  getProject(projectId);
+            dispatch(setMediaFiles(projectState.mediaFiles))
+            dispatch(setTextElements(projectState.textElements))
+        }
+        setElements();
+        
     }, [id, dispatch]);
 
     // useEffect(() => {

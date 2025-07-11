@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { TextElement } from '../../../../types/types';
-import { useAppDispatch, useAppSelector } from '../../../../store';
-import { setResolution, setTextElements } from '../../../../store/slices/projectSlice';
+import { getProject, storeProject, useAppDispatch, useAppSelector } from '../../../../store';
+import { setResolution, setTextElements, updateTextElement } from '../../../../store/slices/projectSlice';
 import toast from 'react-hot-toast';
 
 export default function AddTextButton() {
@@ -29,7 +29,7 @@ export default function AddTextButton() {
         dispatch(setTextElements([...textElements, textElement]));
     };
 
-    const handleAddText = () => {
+    const handleAddText = async () => {
         const lastEnd = textElements.length > 0 ? Math.max(...textElements.map(f => f.positionEnd)) : 0;
 
         const newTextElement: TextElement = {
@@ -53,8 +53,19 @@ export default function AddTextButton() {
             fadeOutDuration: textConfig.fadeOutDuration,
             animation: textConfig.animation || 'none'
         };
-
-        onAddText(newTextElement);
+        // const projectId = localStorage.getItem("projectId")??""
+        // const projectState = await getProject(projectId);
+        // const textFiles = [...projectState.textElements];
+        // textFiles.push(newTextElement);
+        // const project = await getProject(projectId); // from IndexedDB
+        // project.textElements = [...project.textElements, newTextElement];
+        // await storeProject(project); 
+        // dispatch(setTextElements(textFiles));
+        // dispatch(updateTextElement({
+        //     id: crypto.randomUUID(),
+        //     updates : newTextElement
+        // }))
+        onAddText(newTextElement)
         // Reset form
         setTextConfig({
             text: 'Example',

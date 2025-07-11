@@ -112,6 +112,20 @@ const projectStateSlice = createSlice({
         setMarkerTrack: (state, action: PayloadAction<boolean>) => {
             state.enableMarkerTracking = action.payload;
         },
+        updateTextElement: (
+            state,
+            action: PayloadAction<{ id: string; updates: TextElement }>
+            ) => {
+            const { id, updates } = action.payload;
+            const index = state.textElements.findIndex(el => el.id === id);
+            if (index !== -1) {
+                state.textElements[index] = {
+                ...state.textElements[index],
+                ...updates,
+                };
+                state.lastModified = new Date().toISOString(); // track change time
+            }
+        },
         // Special reducer for rehydrating state from IndexedDB
         rehydrate: (state, action: PayloadAction<ProjectState>) => {
             return { ...state, ...action.payload };
@@ -142,6 +156,7 @@ export const {
     setTimelineZoom,
     rehydrate,
     createNewProject,
+    updateTextElement
 } = projectStateSlice.actions;
 
 export default projectStateSlice.reducer; 
