@@ -23,6 +23,7 @@ import { MediaFile } from "@/app/types/types";
 import Image from "next/image";
 import { HamburgerIcon } from "lucide-react";
 import { OverlaySidebar } from "../ui/Sidebar";
+import Export from "./AssetsPanel/tools-section/Export";
 // import ProjectName from "../../../components/editor/player/ProjectName";
 export default function Project({ params }: { params: { id: string } }) {
     const { id } = params || "1234";
@@ -143,8 +144,8 @@ export default function Project({ params }: { params: { id: string } }) {
                     {activeSection === "export" && (
                         <div className="relative">
                             <h2 className="text-lg font-semibold mb-4">Export</h2>
-                            <OverlaySidebar isOpen={open} setIsOpen={setIsOpen}/>
-                            {/* <ExportList /> */}
+                            <Export />
+                            
                         </div>
                     )}
                 </div>

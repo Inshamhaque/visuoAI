@@ -203,41 +203,21 @@ export const Timeline = () => {
         dispatch(setCurrentTime(clampedTime));
     };
 
-    const handleSave = async () => {
-    try {
-        // Get current state
+    const handleSave = async()=>{
+        // in this we shall save the state of all the media types
         const currentMediaFiles = [...mediaFiles];
+        console.log(currentMediaFiles);
         const currentTextFiles = [...textElements];
+        console.log(currentTextFiles);
 
-        // Fix the typo: "projecId" should be "projectId"
-        const projectId = localStorage.getItem("projectId");
-        
-        if (!projectId) {
-            toast.error('No project ID found');
-            return;
-        }
-
-        // Get the current project state
+        // now save here into the IDB project instance
+        const projectId = localStorage.getItem("projecId")??"";
         const projectState = await getProject(projectId);
-        
-        if (!projectState) {
-            toast.error('Project not found');
-            return;
-        }
-
-        // Update the project state
         projectState.mediaFiles = currentMediaFiles;
         projectState.textElements = currentTextFiles;
-        
-        // Save the updated project state
-        await storeProject(projectState); // Pass the full project state, not just the ID
-        
-        toast.success('Project saved successfully');
-    } catch (error) {
-        console.error('Error saving project:', error);
-        toast.error('Failed to save project');
+        await storeProject(projectId);
+
     }
-};
     return (
         <div className="flex w-full flex-col gap-2">
             <div className="flex flex-row items-center justify-between gap-12 w-full">

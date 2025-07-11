@@ -6,6 +6,7 @@ import cookieParser from "cookie-parser"
 import { animationRouter } from "./routes/animation.routes";
 import { messagesRouter } from "./routes/messages.routes";
 import { authMiddleware } from "./middlewares/auth";
+import { processorRoutes } from "./routes/processor.routes";
 // health check endpoint
 // endpoints -> user,
 /* 
@@ -26,6 +27,7 @@ app.use(express.json());
 app.use("/user", userRouter);
 app.use("/animation", animationRouter);
 app.use("/messages", messagesRouter);
+app.use("/processor",processorRoutes)
 app.get("/health",  (req, res) => {
   res.status(200).send("OK");
 });
