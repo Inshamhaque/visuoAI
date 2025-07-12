@@ -405,7 +405,7 @@ Focus on the visualization type: ${layoutPlan.visualizationType || promptAnalysi
     console.log(`All ${uploadResults.length} videos uploaded successfully`);
 
 
-    // Step 7: Clean up local files
+    // Step 7: Clean up local filesx
     console.log("Cleaning up local files...");
     const cleanupPromises = renderResult.videos.map(async (video) => {
       try {

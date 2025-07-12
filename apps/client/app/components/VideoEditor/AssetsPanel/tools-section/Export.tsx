@@ -16,6 +16,10 @@ export default function Export() {
     console.log("Loader state changed:", loading);
   }, [loading]);
 
+  const uploadTos3 = (file:any)=>{
+    // convert the src to binary to give a post request with id,src to the backend
+  }
+
   const onClickHandler = async () => {
     const confirmed = confirm("Have you saved your project? Please confirm before exporting.");
     if (!confirmed) {
@@ -27,6 +31,12 @@ export default function Export() {
     try {
       const projectId = localStorage.getItem("projectId") ?? "";
       const projectState = await getProject(projectId);
+      // TODO:
+      // first we need to upload the audio files to the s3
+      // create an array of audio files and then uplaod each audio file to s3 via axios, 
+      // it return the s3 uri and then repalce the data uri with respeoctive s3 uri
+      // then we can carry on with export functionality
+      
       const response = await axios.post(`${BACKEND_URL}/processor/export`, {
         payload: projectState
       });
@@ -87,7 +97,7 @@ export default function Export() {
     <>
       {loading && <FullScreenLoader />}
       
-      <button onClick={onClickHandler} disabled={loading}>
+      <button className="px-2 py-3 rounded-md hover:cursor-pointer hover:bg-gray-400 bg-gray-300 text-gray-800" onClick={onClickHandler} disabled={loading}>
         Save & Export
       </button>
 

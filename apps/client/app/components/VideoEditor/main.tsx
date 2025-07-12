@@ -6,11 +6,11 @@ import { setCurrentProject, updateProject } from "../../store/slices/projectsSli
 import { rehydrate, setMediaFiles, setTextElements } from '../../store/slices/projectSlice';
 import { setActiveSection } from "../../store/slices/projectSlice";
 import AddText from '../VideoEditor/AssetsPanel/tools-section/AddText';
-// import AddMedia from '../../../components/editor/AssetsPanel/AddButtons/UploadMedia';
-// import MediaList from '../../../components/editor/AssetsPanel/tools-section/MediaList';
+import AddMedia from '../VideoEditor/AssetsPanel/AddButtons/AddMedia';
+// import MediaList from '../VideoEditor/AssetsPanel/tools-section/MediaList';
 import { useRouter } from 'next/navigation';
 import TextButton from "../VideoEditor/AssetsPanel/SideButtons/TextButton";
-// import LibraryButton from "@/app/components/editor/AssetsPanel/SidebarButtons/LibraryButton";
+import LibraryButton from "../VideoEditor/AssetsPanel/SideButtons/LibraryButton";
 import ExportButton from "../VideoEditor/AssetsPanel/SideButtons/ExportButton";
 import HomeButton from "../VideoEditor/AssetsPanel/SideButtons/HomeButton";
 // import ShortcutsButton from "@/app/components/editor/AssetsPanel/SidebarButtons/ShortcutsButton";
@@ -118,7 +118,7 @@ export default function Project({ params }: { params: { id: string } }) {
                     <div className="mt-2 flex flex-col space-y-2 ">
                         <HomeButton />
                         <TextButton onClick={() => handleFocus("text")} />
-                        {/* <LibraryButton onClick={() => handleFocus("media")} /> */}
+                        <LibraryButton onClick={() => handleFocus("media")} />
                         <ExportButton onClick={() => handleFocus("export")} />
                     </div>
                 </div>
@@ -128,8 +128,8 @@ export default function Project({ params }: { params: { id: string } }) {
                     {activeSection === "media" && (
                         <div>
                             <h2 className="text-lg flex flex-row gap-2 items-center justify-center font-semibold mb-2">
-                                This is the media modal
-                                {/* <AddMedia /> */}
+                                
+                                <AddMedia  />
                             </h2>
                             {/* <MediaList /> */}
                         </div>

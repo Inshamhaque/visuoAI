@@ -10,7 +10,7 @@ import AudioTimeline from "./element-timeline/AudioTimeline";
 import TextTimeline from "./element-timeline/TextTimeline";
 import { throttle } from 'lodash';
 import GlobalKeyHandlerProps from "../Globalkeyhandler";
-import toast from "react-hot-toast";
+import { toast, ToastContainer } from "react-toastify";
 export const Timeline = () => {
     const { currentTime, timelineZoom, enableMarkerTracking, activeElement, activeElementIndex, mediaFiles, textElements, duration, isPlaying } = useAppSelector((state) => state.projectState);
     const dispatch = useDispatch();
@@ -211,12 +211,15 @@ export const Timeline = () => {
         console.log(currentTextFiles);
 
         // now save here into the IDB project instance
-        const projectId = localStorage.getItem("projecId")??"";
+        const projectId = localStorage.getItem("projectId")??"";
         const projectState = await getProject(projectId);
+        console.log("earlier project State :",projectState);
         projectState.mediaFiles = currentMediaFiles;
         projectState.textElements = currentTextFiles;
-        await storeProject(projectId);
-
+        await storeProject(projectState);
+        const newState = await getProject(projectId);
+        console.log("new state is ",newState)
+        toast.success("State saved Successfully")
     }
     return (
         <div className="flex w-full flex-col gap-2">
@@ -355,6 +358,7 @@ export const Timeline = () => {
                 </div>
             </div >
             <GlobalKeyHandlerProps handleDuplicate={handleDuplicate} handleSplit={handleSplit} handleDelete={handleDelete} />
+            <ToastContainer />
         </div>
 
     );
