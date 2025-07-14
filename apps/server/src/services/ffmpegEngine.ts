@@ -43,6 +43,7 @@ interface TextElement {
   fontSize: number;
   color: string;
   fontFamily: string;
+  font:string;
 }
 
 interface ExportSettings {
@@ -344,85 +345,104 @@ export class VideoProcessor {
     });
   }
 
-  /**
-   * 4. TEXT OVERLAY
-   * Add text overlays to video based on text elements
-   */
-  async addTextOverlay(inputPath: string, outputPath: string, textElements: TextElement[], videoResolution: Resolution): Promise<string> {
-    return new Promise(async (resolve, reject) => {
-      if (!textElements || textElements.length === 0) {
-        // No text overlay needed, just copy the file
-        fs.copyFileSync(inputPath, outputPath);
-        console.log(`✅ No text overlay needed, video copied: ${outputPath}`);
-        resolve(outputPath);
-        return;
+/**
+ * 4. TEXT OVERLAY - FIXED VERSION
+ * Add text overlays to video based on text elements
+ */
+async addTextOverlay(inputPath: string, outputPath: string, textElements: TextElement[], videoResolution: Resolution): Promise<string> {
+  return new Promise(async (resolve, reject) => {
+    if (!textElements || textElements.length === 0) {
+      // No text overlay needed, just copy the file
+      fs.copyFileSync(inputPath, outputPath);
+      console.log(`✅ No text overlay needed, video copied: ${outputPath}`);
+      resolve(outputPath);
+      return;
+    }
+    
+    // Check if input video has audio
+    const hasAudio = await this.hasAudioStream(inputPath);
+    console.log(`🔊 Audio stream detected: ${hasAudio}`);
+    
+    let command = ffmpeg(inputPath);
+    
+    // Build filter complex for text overlays
+    let filterComplex = '';
+    let currentInput = '[0:v]';
+    
+    textElements.forEach((textElement, index) => {
+      const {
+        text,
+        positionStart,
+        positionEnd,
+        x,
+        y,
+        fontSize = 24,
+        color = 'white',
+        font = 'Arial' // Handle both 'font' and 'fontFamily' properties
+      } = textElement;
+      
+      // Use 'font' if available, otherwise fallback to 'fontFamily'
+      const fontFamily = font || (textElement as any).fontFamily || 'Arial';
+      
+      const outputLabel = index === textElements.length - 1 ? '[outv]' : `[v${index + 1}]`;
+      
+      // Escape text for FFmpeg
+      const escapedText = text.replace(/'/g, "\\'").replace(/:/g, "\\:");
+      
+      // Convert hex color to FFmpeg format if needed
+      let ffmpegColor = color;
+      if (color.startsWith('#')) {
+        // Convert hex to color name or keep as hex
+        ffmpegColor = color; // FFmpeg supports hex colors
       }
       
-      // Check if input video has audio
-      const hasAudio = await this.hasAudioStream(inputPath);
-      console.log(`🔊 Audio stream detected: ${hasAudio}`);
+      // Ensure coordinates are within video bounds
+      const safeX = Math.max(0, Math.min(x, videoResolution.width - 100));
+      const safeY = Math.max(0, Math.min(y, videoResolution.height - 100));
       
-      let command = ffmpeg(inputPath);
+      console.log(`📝 Adding text: "${text}" at (${safeX}, ${safeY}) from ${positionStart}s to ${positionEnd}s`);
       
-      // Build filter complex for text overlays
-      let filterComplex = '';
-      let currentInput = '[0:v]';
+      // Build drawtext filter with better formatting
+      filterComplex += `${currentInput}drawtext=` +
+                      `text='${escapedText}':` +
+                      `fontfile='/System/Library/Fonts/Arial.ttf':` + // Try to use system font
+                      `fontsize=${fontSize}:` +
+                      `fontcolor=${ffmpegColor}:` +
+                      `x=${safeX}:y=${safeY}:` +
+                      `enable='between(t,${positionStart},${positionEnd})'` +
+                      `${outputLabel};`;
       
-      textElements.forEach((textElement, index) => {
-        const {
-          text,
-          positionStart,
-          positionEnd,
-          x,
-          y,
-          fontSize = 24,
-          color = 'white',
-          fontFamily = 'Arial'
-        } = textElement;
-        
-        const outputLabel = index === textElements.length - 1 ? '[outv]' : `[v${index + 1}]`;
-        
-        // Escape text for FFmpeg
-        const escapedText = text.replace(/'/g, "\\'").replace(/:/g, "\\:");
-        
-        // Build drawtext filter
-        filterComplex += `${currentInput}drawtext=text='${escapedText}':` +
-                        `fontsize=${fontSize}:` +
-                        `fontcolor=${color}:` +
-                        `x=${x}:y=${y}:` +
-                        `enable='between(t,${positionStart},${positionEnd})'${outputLabel};`;
-        
-        currentInput = `[v${index + 1}]`;
-      });
-      
-      // Remove the last semicolon
-      filterComplex = filterComplex.slice(0, -1);
-      
-      console.log('🎨 Applying text overlay with filter:', filterComplex);
-      
-      command.complexFilter(filterComplex);
-      
-      // Map video output
-      command.outputOptions(['-map', '[outv]']);
-      
-      // Map audio if it exists
-      if (hasAudio) {
-        command.outputOptions(['-map', '0:a']);
-      }
-      
-      command
-        .output(outputPath)
-        .on('end', () => {
-          console.log(`✅ Text overlay added: ${outputPath}`);
-          resolve(outputPath);
-        })
-        .on('error', (err) => {
-          console.error('❌ Text overlay error:', err);
-          reject(err);
-        })
-        .run();
+      currentInput = `[v${index + 1}]`;
     });
-  }
+    
+    // Remove the last semicolon
+    filterComplex = filterComplex.slice(0, -1);
+    
+    console.log('🎨 Applying text overlay with filter:', filterComplex);
+    
+    command.complexFilter(filterComplex);
+    
+    // Map video output
+    command.outputOptions(['-map', '[outv]']);
+    
+    // Map audio if it exists
+    if (hasAudio) {
+      command.outputOptions(['-map', '0:a']);
+    }
+    
+    command
+      .output(outputPath)
+      .on('end', () => {
+        console.log(`✅ Text overlay added: ${outputPath}`);
+        resolve(outputPath);
+      })
+      .on('error', (err) => {
+        console.error('❌ Text overlay error:', err);
+        reject(err);
+      })
+      .run();
+  });
+}
 
   /**
    * 5. COMPLETE PROCESSING PIPELINE

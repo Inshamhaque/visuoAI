@@ -13,10 +13,13 @@ import { useAppSelector } from "./store";
 import { setFilesID, setMediaFiles, setTextElements } from "./store/slices/projectSlice";
 import Image from "next/image";
 import Screenshot from "@/assets/Screenshot_2025-07-10_at_2.25.40_AM-removebg-preview.png";
+import { OverlaySidebar } from "./components/ui/Sidebar";
+import { HomeHoverSidebar } from "./components/ui/HomeHoverSidebar";
 
 export default function Home() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [isOpen, setIsOpen] = useState(false)
   const [prompt, setPrompt] = useState("");
   const dispatch = useAppDispatch();
   const { mediaFiles, filesID } = useAppSelector((state) => state.projectState);
@@ -151,6 +154,7 @@ export default function Home() {
   // ✅ Otherwise render full app
   return (
     <div className="flex justify-between min-h-screen bg-gradient-to-tr from-gray-800 to-black text-white flex flex-col items-center justify-center px-4 relative">
+      {isSigned && <HomeHoverSidebar />}
       <div className="w-full flex items-center justify-between px-4 py-3 absolute top-0 left-0 z-50">
         <div className="flex items-center">
           <Image src={Screenshot} alt="Logo" className="h-20 w-auto" />
