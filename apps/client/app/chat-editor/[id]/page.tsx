@@ -1,8 +1,5 @@
 "use client";
 import { useParams } from "next/navigation";
-import { ArrowUp } from "lucide-react";
-import Navbar from "../../components/Navbar";
-import React, { useState } from "react";
 import VideoEditor from "../../components/VideoEditor/main";
 import ProtectedRoute from "../../ProtectedRoute";
 

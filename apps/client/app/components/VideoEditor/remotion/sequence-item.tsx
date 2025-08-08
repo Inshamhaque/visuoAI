@@ -1,10 +1,4 @@
-import {
-  AbsoluteFill,
-  OffthreadVideo,
-  Audio,
-  Img,
-  Sequence,
-} from "remotion";
+import { AbsoluteFill, OffthreadVideo, Audio, Img, Sequence } from "remotion";
 import { MediaFile, TextElement } from "@/app/types/types";
 
 const REMOTION_SAFE_FRAME = 0;
@@ -16,19 +10,13 @@ interface SequenceItemOptions {
   currentTime?: number;
 }
 
-const toCssUnit = (
-  value?: number | string,
-  fallback: string = "auto"
-): string => {
+const toCssUnit = (value?: number | string, fallback: string = "auto"): string => {
   if (typeof value === "number") return `${value}px`;
   if (typeof value === "string" && /^\d+$/.test(value)) return `${value}px`;
   return value || fallback;
 };
 
-const calculateFrames = (
-  display: { from: number; to: number },
-  fps: number
-) => {
+const calculateFrames = (display: { from: number; to: number }, fps: number) => {
   const from = display.from * fps;
   const to = display.to * fps;
   const durationInFrames = Math.max(1, to - from);
@@ -74,8 +62,7 @@ export const SequenceItem: Record<
             height: toCssUnit(item.height, "auto"),
             transform: "none",
             zIndex: item.zIndex ?? 0,
-            opacity:
-              item?.opacity !== undefined ? item.opacity / 100 : 1,
+            opacity: item?.opacity !== undefined ? item.opacity / 100 : 1,
             borderRadius: `10px`,
             overflow: "hidden",
           }}
@@ -193,8 +180,7 @@ export const SequenceItem: Record<
             left: toCssUnit(item.x, "0px"),
             width: toCssUnit(crop.width, "100%"),
             height: toCssUnit(crop.height, "auto"),
-            opacity:
-              item?.opacity !== undefined ? item.opacity / 100 : 1,
+            opacity: item?.opacity !== undefined ? item.opacity / 100 : 1,
             overflow: "hidden",
           }}
         >

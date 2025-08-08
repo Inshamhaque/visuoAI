@@ -6,4 +6,4 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 // TODO : move this to .env
-export const BACKEND_URL='http://192.168.29.64:3001'
+export const BACKEND_URL = "http://localhost:3001";

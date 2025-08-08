@@ -15,43 +15,43 @@ const Composition = () => {
   const previousTime = useRef(0);
 
   useEffect(() => {
-  //   const demoMediaFiles: MediaFile[] = [
-  // {
-  //   id: "video-1",
-  //   fileName: "sample-video.mp4",
-  //   fileId: "demo-file-1",
-  //   type: "video",
-  //   src: "https://decentralized-web2-quickpay.s3.ap-south-1.amazonaws.com/Anibot/addca3ee-369e-4f1b-978d-81a1b0058453/SolarSystemModel.mp4",
-  //   startTime: 0,
-  //   endTime: 10,
-  //   positionStart: 0,
-  //   positionEnd: 10,
-  //   includeInMerge: true,
-  //   playbackSpeed: 1,
-  //   volume: 100,
-  //   zIndex: 0,
-  //   x: 0,
-  //   y: 0,
-  //   width: 1920,
-  //   height: 1080,
-  //   opacity: 100,
-  //   rotation: 0,
-  //   crop: {
-  //     x: 0,
-  //     y: 0,
-  //     width: 960,
-  //     height: 540,
-  //   },
-  // },]
-  // dispatch(setMediaFiles(demoMediaFiles));
-    const fetchVideos = async()=>{
-      const id = localStorage.getItem("projectId")??""
+    //   const demoMediaFiles: MediaFile[] = [
+    // {
+    //   id: "video-1",
+    //   fileName: "sample-video.mp4",
+    //   fileId: "demo-file-1",
+    //   type: "video",
+    //   src: "https://decentralized-web2-quickpay.s3.ap-south-1.amazonaws.com/Anibot/addca3ee-369e-4f1b-978d-81a1b0058453/SolarSystemModel.mp4",
+    //   startTime: 0,
+    //   endTime: 10,
+    //   positionStart: 0,
+    //   positionEnd: 10,
+    //   includeInMerge: true,
+    //   playbackSpeed: 1,
+    //   volume: 100,
+    //   zIndex: 0,
+    //   x: 0,
+    //   y: 0,
+    //   width: 1920,
+    //   height: 1080,
+    //   opacity: 100,
+    //   rotation: 0,
+    //   crop: {
+    //     x: 0,
+    //     y: 0,
+    //     width: 960,
+    //     height: 540,
+    //   },
+    // },]
+    // dispatch(setMediaFiles(demoMediaFiles));
+    const fetchVideos = async () => {
+      const id = localStorage.getItem("projectId") ?? "";
       const projectStatus = await getProject(id);
       // clear exisiting media files
       dispatch(setMediaFiles([]));
       const demoMediaFiles = projectStatus.mediaFiles;
       dispatch(setMediaFiles(demoMediaFiles));
-    }
+    };
     fetchVideos();
   }, [dispatch]);
 

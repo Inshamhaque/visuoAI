@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useAppDispatch, useAppSelector } from "@/app/store";
 import { MediaFile } from "@/app/types/types";
-import { MediaType } from "@/app/types/types";
 import { setMediaFiles } from "@/app/store/slices/projectSlice";
 
 export default function AddMedia() {
@@ -13,7 +12,7 @@ export default function AddMedia() {
 
   const addMediaHandler = () => {
     if (!audioBase64 || !audioFile) return;
-    
+
     // Later improvements : Add the sound recorder functionality... alongside the audio upload
     // we need to find the ending of the last audio file ... for now just add this
     const id = Math.random().toString();
@@ -21,7 +20,7 @@ export default function AddMedia() {
       id: id,
       fileName: audioFile.name, // Use actual file name
       fileId: id,
-      type: 'audio',
+      type: "audio",
       startTime: 0, // within the source video
       src: audioBase64, // Store base64 instead of blob URL
       endTime: 0 + (audioDuration ?? 0),
@@ -31,10 +30,10 @@ export default function AddMedia() {
       playbackSpeed: 1,
       volume: 100,
       zIndex: 1,
-    }
+    };
     const updatedMediaFiles = [...mediaFiles, newAudioFile];
     dispatch(setMediaFiles(updatedMediaFiles));
-  }
+  };
 
   // Convert file to base64
   const fileToBase64 = (file: File): Promise<string> => {
@@ -42,34 +41,34 @@ export default function AddMedia() {
       const reader = new FileReader();
       reader.readAsDataURL(file);
       reader.onload = () => resolve(reader.result as string);
-      reader.onerror = error => reject(error);
+      reader.onerror = (error) => reject(error);
     });
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    
+
     if (!file.type.startsWith("audio/")) {
       alert("Please select a valid audio file.");
       return;
     }
 
     setAudioFile(file);
-    
+
     try {
       // Convert to base64
       const base64 = await fileToBase64(file);
       setAudioBase64(base64);
-      
+
       // Get duration using base64 URL
       const audio = new Audio(base64);
       audio.addEventListener("loadedmetadata", () => {
         setAudioDuration(audio.duration);
       });
     } catch (error) {
-      console.error('Error converting file to base64:', error);
-      alert('Error processing audio file.');
+      console.error("Error converting file to base64:", error);
+      alert("Error processing audio file.");
     }
   };
 
@@ -84,9 +83,13 @@ export default function AddMedia() {
       />
       {audioFile && audioBase64 && (
         <div className="bg-gray-100 p-3 rounded-md">
-          <p className="text-sm text-gray-700"><strong>File:</strong> {audioFile.name}</p>
+          <p className="text-sm text-gray-700">
+            <strong>File:</strong> {audioFile.name}
+          </p>
           {audioDuration && (
-            <p className="text-sm text-gray-500"><strong>Duration:</strong> {audioDuration.toFixed(2)} sec</p>
+            <p className="text-sm text-gray-500">
+              <strong>Duration:</strong> {audioDuration.toFixed(2)} sec
+            </p>
           )}
           <audio controls className="mt-2 w-full rounded-md">
             <source src={audioBase64} type={audioFile.type} />
@@ -94,8 +97,8 @@ export default function AddMedia() {
           </audio>
         </div>
       )}
-      <button 
-        onClick={addMediaHandler} 
+      <button
+        onClick={addMediaHandler}
         disabled={!audioBase64}
         className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400"
       >

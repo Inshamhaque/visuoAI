@@ -1,13 +1,14 @@
 "use client";
 import { FolderUp } from "lucide-react";
+import Link from "next/link";
 
 export default function Navbar() {
   return (
     <nav className="bg-black text-white px-6 py-4 flex items-center justify-between shadow-md">
       {/* Left: Logo */}
-      <a href="/" className="text-xl font-bold cursor-pointer select-none">
-        AniBot
-      </a>
+      <Link href="/" className="text-xl font-bold cursor-pointer select-none">
+        VisuoAI
+      </Link>
 
       {/* Right: User Actions */}
       <div className="flex items-center space-x-4">
