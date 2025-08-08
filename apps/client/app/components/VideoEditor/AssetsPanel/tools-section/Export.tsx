@@ -9,6 +9,7 @@ export default function Export() {
   const [loading, setIsLoading] = useState(false);
   const [showVideoPopup, setShowVideoPopup] = useState(false);
   const [videoUrl, setVideoUrl] = useState("");
+  // eslint-ignore 
   const [videoKey, setVideoKey] = useState("");
   const [downloading, setDownloading] = useState(false);
 
@@ -16,9 +17,9 @@ export default function Export() {
     console.log("Loader state changed:", loading);
   }, [loading]);
 
-  const uploadTos3 = (file:any)=>{
+  const uploadTos3 = (file: any) => {
     // convert the src to binary to give a post request with id,src to the backend
-  }
+  };
 
   const onClickHandler = async () => {
     const confirmed = confirm("Have you saved your project? Please confirm before exporting.");
@@ -33,19 +34,19 @@ export default function Export() {
       const projectState = await getProject(projectId);
       // TODO:
       // first we need to upload the audio files to the s3
-      // create an array of audio files and then uplaod each audio file to s3 via axios, 
+      // create an array of audio files and then uplaod each audio file to s3 via axios,
       // it return the s3 uri and then repalce the data uri with respeoctive s3 uri
       // then we can carry on with export functionality
-      
+
       const response = await axios.post(`${BACKEND_URL}/processor/export`, {
-        payload: projectState
+        payload: projectState,
       });
 
       if (response.data.success) {
         setVideoUrl(response.data.s3Url);
         setVideoKey(response.data.key);
         setShowVideoPopup(true);
-        toast.success('Exported successfully!');
+        toast.success("Exported successfully!");
       }
     } catch (error) {
       console.error("Export error:", error);
@@ -62,25 +63,25 @@ export default function Export() {
         // Fetch the video as a blob
         const response = await fetch(videoUrl);
         const blob = await response.blob();
-        
+
         // Create a blob URL
         const blobUrl = window.URL.createObjectURL(blob);
-        
+
         // Create a temporary anchor element to trigger download
-        const link = document.createElement('a');
+        const link = document.createElement("a");
         link.href = blobUrl;
-        link.download = 'final.mp4'; // You can customize the filename
+        link.download = "final.mp4"; // You can customize the filename
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        
+
         // Clean up the blob URL
         window.URL.revokeObjectURL(blobUrl);
-        
-        toast.success('Video downloaded successfully!');
+
+        toast.success("Video downloaded successfully!");
       } catch (error) {
-        console.error('Download error:', error);
-        toast.error('Failed to download video. Please try again.');
+        console.error("Download error:", error);
+        toast.error("Failed to download video. Please try again.");
       } finally {
         setDownloading(false);
       }
@@ -96,8 +97,12 @@ export default function Export() {
   return (
     <>
       {loading && <FullScreenLoader />}
-      
-      <button className="px-2 py-3 rounded-md hover:cursor-pointer hover:bg-gray-400 bg-gray-300 text-gray-800" onClick={onClickHandler} disabled={loading}>
+
+      <button
+        className="px-2 py-3 rounded-md hover:cursor-pointer hover:bg-gray-400 bg-gray-300 text-gray-800"
+        onClick={onClickHandler}
+        disabled={loading}
+      >
         Save & Export
       </button>
 
@@ -107,33 +112,26 @@ export default function Export() {
           <div className="bg-white p-6 rounded-lg shadow-lg max-w-2xl w-full mx-4">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold">Export Complete!</h2>
-              <button 
-                onClick={closePopup}
-                className="text-gray-500 hover:text-gray-700 text-2xl"
-              >
+              <button onClick={closePopup} className="text-gray-500 hover:text-gray-700 text-2xl">
                 ×
               </button>
             </div>
-            
+
             <div className="mb-4">
-              <video 
-                controls 
-                className="w-full max-h-96 rounded"
-                src={videoUrl}
-              >
+              <video controls className="w-full max-h-96 rounded" src={videoUrl}>
                 Your browser does not support the video tag.
               </video>
             </div>
-            
+
             <div className="flex justify-center space-x-4">
-              <button 
+              <button
                 onClick={downloadVideo}
                 disabled={downloading}
                 className="bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white px-6 py-2 rounded"
               >
-                {downloading ? 'Downloading...' : 'Download Video'}
+                {downloading ? "Downloading..." : "Download Video"}
               </button>
-              <button 
+              <button
                 onClick={closePopup}
                 className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded"
               >

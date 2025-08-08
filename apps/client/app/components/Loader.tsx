@@ -87,11 +87,7 @@ const Loader = ({
   if (variant === "dots") {
     return (
       <motion.div
-        className={cn(
-          "flex items-center justify-center",
-          containerSizes[size],
-          className
-        )}
+        className={cn("flex items-center justify-center", containerSizes[size], className)}
         variants={containerVariants}
         initial="initial"
         animate="animate"
@@ -136,11 +132,7 @@ const Loader = ({
   if (variant === "wave") {
     return (
       <motion.div
-        className={cn(
-          "flex items-center justify-center",
-          containerSizes[size],
-          className
-        )}
+        className={cn("flex items-center justify-center", containerSizes[size], className)}
         variants={containerVariants}
         initial="initial"
         animate="animate"

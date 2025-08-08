@@ -82,6 +82,7 @@ export async function signin(req: Request, res: Response) {
 }
 export async function getProjects(req:AuthRequest, res:Response){
     const  userId  = req.user;
+    res.setHeader("Cache-Control", "no-store");
     console.log(userId) // debug
     try{
       const projs = await client.project.findMany({

@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { MoveRight } from "lucide-react";
 import axios from "axios";
 import FullScreenLoader from "./components/LoaderScreen";
-import { toast, ToastContainer } from 'react-toastify';
+import { toast, ToastContainer } from "react-toastify";
 import { BACKEND_URL } from "./lib/utils";
 import { store, storeProject, useAppDispatch } from "./store";
 import { ProjectState } from "./types/types";
@@ -19,7 +19,7 @@ import { HomeHoverSidebar } from "./components/ui/HomeHoverSidebar";
 export default function Home() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [isOpen, setIsOpen] = useState(false)
+  const [isOpen, setIsOpen] = useState(false);
   const [prompt, setPrompt] = useState("");
   const dispatch = useAppDispatch();
   const { mediaFiles, filesID } = useAppSelector((state) => state.projectState);
@@ -46,7 +46,7 @@ export default function Home() {
       setLoading(true);
       const isToken = localStorage.getItem("token");
       if (!isToken) {
-        router.push('/auth/signin');
+        router.push("/auth/signin");
         return;
       }
       localStorage.setItem("prompt", prompt);
@@ -55,19 +55,19 @@ export default function Home() {
         { prompt },
         {
           headers: {
-            authorization: `Bearer ${localStorage.getItem('token')}`
+            authorization: `Bearer ${localStorage.getItem("token")}`,
           },
         }
       );
 
       const { animationId, videos, success } = response.data;
       if (response.data.status === 401) {
-        return toast.error('Unauthorized user', { position: "top-right" });
+        return toast.error("Unauthorized user", { position: "top-right" });
       }
-      if(response.data.status==411){
-        return toast.error("Free Limit reached, Subscribe to continue",{
-          position:"top-right"
-        })
+      if (response.data.status == 411) {
+        return toast.error("Free Limit reached, Subscribe to continue", {
+          position: "top-right",
+        });
       }
 
       const newProject: ProjectState = {
@@ -81,8 +81,8 @@ export default function Home() {
         isPlaying: false,
         isMuted: false,
         duration: 0,
-        activeSection: 'media',
-        activeElement: 'text',
+        activeSection: "media",
+        activeElement: "text",
         activeElementIndex: 0,
         filesID: [],
         zoomLevel: 1,
@@ -90,15 +90,15 @@ export default function Home() {
         enableMarkerTracking: true,
         resolution: { width: 1920, height: 1080 },
         fps: 30,
-        aspectRatio: '16:9',
+        aspectRatio: "16:9",
         history: [],
         future: [],
         exportSettings: {
-          resolution: '1080p',
-          quality: 'high',
-          speed: 'fastest',
+          resolution: "1080p",
+          quality: "high",
+          speed: "fastest",
           fps: 30,
-          format: 'mp4',
+          format: "mp4",
           includeSubtitles: false,
         },
       };
@@ -108,7 +108,7 @@ export default function Home() {
       dispatch(addProject(newProject));
 
       const updatedMedia = [];
-      const updatedFiles = [...filesID || []];
+      const updatedFiles = [...(filesID || [])];
 
       for (const video of videos) {
         const newID = crypto.randomUUID();
@@ -116,13 +116,13 @@ export default function Home() {
           updatedMedia.push(video);
           updatedFiles.push(newID);
         } catch (error) {
-          console.error('Error storing video:', error);
+          console.error("Error storing video:", error);
         }
       }
-      dispatch(setTextElements([]))
+      dispatch(setTextElements([]));
       dispatch(setMediaFiles(updatedMedia));
       dispatch(setFilesID(updatedFiles));
-      toast.success('Media added successfully.');
+      toast.success("Media added successfully.");
       router.push(`/chat-editor/${encodeURIComponent(animationId)}`);
     } catch (error) {
       toast.error("Failed to create animation", { position: "top-right" });
@@ -139,17 +139,17 @@ export default function Home() {
 
   // ✅ If mobile, return warning page
   if (isMobile) {
-  return (
-    <div className="flex flex-col items-center justify-center h-screen bg-black text-white px-4 text-center space-y-6">
-      <Image src={Screenshot} alt="Mobile Restriction" className="w-80 h-auto" />
-      <p className="text-lg sm:text-2xl font-semibold max-w-md">
-        ⚠️ This video editor is only available on desktop devices.<br />
-        Please open this website on a PC or laptop for the best experience.
-      </p>
-    </div>
-  );
-}
-
+    return (
+      <div className="flex flex-col items-center justify-center h-screen bg-black text-white px-4 text-center space-y-6">
+        <Image src={Screenshot} alt="Mobile Restriction" className="w-80 h-auto" />
+        <p className="text-lg sm:text-2xl font-semibold max-w-md">
+          ⚠️ This video editor is only available on desktop devices.
+          <br />
+          Please open this website on a PC or laptop for the best experience.
+        </p>
+      </div>
+    );
+  }
 
   // ✅ Otherwise render full app
   return (
@@ -163,7 +163,7 @@ export default function Home() {
         <div className="flex gap-3">
           {!isSigned && (
             <button
-              onClick={() => router.push('/auth/signin')}
+              onClick={() => router.push("/auth/signin")}
               className="text-sm text-white/70 hover:text-white transition"
             >
               Sign In
@@ -171,7 +171,7 @@ export default function Home() {
           )}
           {!isSigned && (
             <button
-              onClick={() => router.push('/auth/signup')}
+              onClick={() => router.push("/auth/signup")}
               className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-1.5 rounded transition"
             >
               Get Started
@@ -184,8 +184,8 @@ export default function Home() {
         What do you want to animate?
       </h1>
       <p className="text-center text-white/60 mb-6 max-w-2xl">
-        Create educational animations by simply describing concepts. Great for
-        explaining physics, math, coding, biology, or any idea visually.
+        Create educational animations by simply describing concepts. Great for explaining physics,
+        math, coding, biology, or any idea visually.
       </p>
       <div className="flex bg-gray-800 rounded-lg w-full max-w-xl p-4 shadow-lg mb-6">
         <input

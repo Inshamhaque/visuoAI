@@ -1,17 +1,16 @@
-import React, { use, useEffect, useState } from 'react';
-import { X, Menu, Home, User, Settings, Mail, Bell, Search } from 'lucide-react';
-import { BACKEND_URL, cn } from '../../lib/utils';
-import { Dispatch, SetStateAction } from 'react';
-import axios from 'axios';
-import toast from 'react-hot-toast';
-import { tree } from 'next/dist/build/templates/app-page';
-import { useRouter } from 'next/navigation';
+import React, { use, useEffect, useState } from "react";
+import { X, Menu, Home, User, Settings, Mail, Bell, Search } from "lucide-react";
+import { BACKEND_URL, cn } from "../../lib/utils";
+import { Dispatch, SetStateAction } from "react";
+import axios from "axios";
+import toast from "react-hot-toast";
+import { tree } from "next/dist/build/templates/app-page";
+import { useRouter } from "next/navigation";
 import { getProject, store, storeProject, useAppDispatch } from "../../store";
 import { ProjectState } from "../../types/types";
 import { addProject } from "../../store/slices/projectsSlice";
 import { useAppSelector } from "../../store";
 import { setFilesID, setMediaFiles, setTextElements } from "../../store/slices/projectSlice";
-
 
 interface SidebarItem {
   icon: React.ComponentType<any>;
@@ -23,24 +22,24 @@ interface SidebarItem {
 interface OverlaySidebarProps {
   items?: SidebarItem[];
   className?: string;
-  isOpen:boolean;
-  setIsOpen:React.Dispatch<SetStateAction<boolean>>
+  isOpen: boolean;
+  setIsOpen: React.Dispatch<SetStateAction<boolean>>;
 }
 
 const defaultItems: SidebarItem[] = [
-  { icon: Home, label: 'Home', href: '/' },
-  { icon: User, label: 'Profile', href: '/profile' },
-  { icon: Mail, label: 'Messages', href: '/messages' },
-  { icon: Bell, label: 'Notifications', href: '/notifications' },
-  { icon: Search, label: 'Search', href: '/search' },
-  { icon: Settings, label: 'Settings', href: '/settings' },
+  { icon: Home, label: "Home", href: "/" },
+  { icon: User, label: "Profile", href: "/profile" },
+  { icon: Mail, label: "Messages", href: "/messages" },
+  { icon: Bell, label: "Notifications", href: "/notifications" },
+  { icon: Search, label: "Search", href: "/search" },
+  { icon: Settings, label: "Settings", href: "/settings" },
 ];
 
-export const OverlaySidebar: React.FC<OverlaySidebarProps> = ({ 
-  items = defaultItems, 
+export const OverlaySidebar: React.FC<OverlaySidebarProps> = ({
+  items = defaultItems,
   className,
   isOpen,
-  setIsOpen 
+  setIsOpen,
 }) => {
   const [loading, setLoading] = useState(true);
   const [projects, setProjects] = useState([]);
@@ -48,7 +47,7 @@ export const OverlaySidebar: React.FC<OverlaySidebarProps> = ({
   const router = useRouter();
   const dispatch = useAppDispatch();
   const { textElements } = useAppSelector((state) => state.projectState);
-  
+
   useEffect(() => {
     const fetch = async () => {
       try {
@@ -59,13 +58,15 @@ export const OverlaySidebar: React.FC<OverlaySidebarProps> = ({
         });
 
         if (response.data.status == 411) {
-          return toast.error("No projects are there", { position: "top-right" });
+          return toast.error("No projects are there", {
+            position: "top-right",
+          });
         }
-
+        // at the same time load that to the IDB as well...
         setProjects(response.data.projects);
         setLoading(false);
       } catch (e) {
-        toast.error('Some error occurred while fetching projects', {
+        toast.error("Some error occurred while fetching projects", {
           position: "top-right",
         });
         setError(true);
@@ -110,48 +111,48 @@ export const OverlaySidebar: React.FC<OverlaySidebarProps> = ({
     //           includeSubtitles: false,
     //         },
     //       };
-    
-          // localStorage.setItem("projectId", item.id);
-          // await storeProject(newProject);
-          // dispatch(addProject(newProject));
 
-          const project = await getProject(item.id);
-          const videos = project.mediaFiles;
-    
-          const updatedMedia = [];
-          const updatedFiles = [];
-          const updatedTextFiles = []
-    
-          for (const video of videos) {
-            const newID = crypto.randomUUID();
-            try {
-              updatedMedia.push(video);
-              updatedFiles.push(newID);
-            } catch (error) {
-              console.error('Error storing video:', error);
-            }
-          }
-    
-          dispatch(setMediaFiles(updatedMedia));
-          // flow be like, we extract the textElements from the Idb istead of reduc reducers
-          const projectId = localStorage.getItem("projectId")??""
-          const projectStatus = await getProject(projectId);
-          const { textElements } = projectStatus;
-          dispatch(setTextElements(textElements));
-          // console.log("project id:",projectId)
-          // const projectState = await getProject(projectId);
-          // console.log("project state",projectState)
-          // dispatch(setTextElements([]))
-          // console.log("current text elemnt before dispatch",textElements)
-          // const textFiles = projectState.textElements;
-          // console.log("after dispatch",textElements)
-          // dispatch(setTextElements(textFiles));
-                    
-          // dispatch(setFilesID(updatedFiles));
-          // toast.success('Media added successfully.');
-          localStorage.setItem("projectId", item.id);
-          setIsOpen(false);
-          router.push(`/chat-editor/${item.id}`);
+    // localStorage.setItem("projectId", item.id);
+    // await storeProject(newProject);
+    // dispatch(addProject(newProject));
+
+    const project = await getProject(item.id);
+    const videos = project.mediaFiles;
+
+    const updatedMedia = [];
+    const updatedFiles = [];
+    const updatedTextFiles = [];
+
+    for (const video of videos) {
+      const newID = crypto.randomUUID();
+      try {
+        updatedMedia.push(video);
+        updatedFiles.push(newID);
+      } catch (error) {
+        console.error("Error storing video:", error);
+      }
+    }
+
+    dispatch(setMediaFiles(updatedMedia));
+    // flow be like, we extract the textElements from the Idb istead of reduc reducers
+    const projectId = localStorage.getItem("projectId") ?? "";
+    const projectStatus = await getProject(projectId);
+    const { textElements } = projectStatus;
+    dispatch(setTextElements(textElements));
+    // console.log("project id:",projectId)
+    // const projectState = await getProject(projectId);
+    // console.log("project state",projectState)
+    // dispatch(setTextElements([]))
+    // console.log("current text elemnt before dispatch",textElements)
+    // const textFiles = projectState.textElements;
+    // console.log("after dispatch",textElements)
+    // dispatch(setTextElements(textFiles));
+
+    // dispatch(setFilesID(updatedFiles));
+    // toast.success('Media added successfully.');
+    localStorage.setItem("projectId", item.id);
+    setIsOpen(false);
+    router.push(`/chat-editor/${item.id}`);
   };
 
   return (
@@ -218,4 +219,3 @@ export const OverlaySidebar: React.FC<OverlaySidebarProps> = ({
     </div>
   );
 };
-

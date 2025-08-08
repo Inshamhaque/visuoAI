@@ -11,6 +11,7 @@ import { randomBytes } from "crypto";
 import { fixOverlapsInManimCode } from "../services/fixCode";
 import { exec } from 'child_process';
 import { promisify } from 'util';
+import { MediaFile } from "../types";
 
 const execAsync = promisify(exec);
 
@@ -418,32 +419,18 @@ Focus on the visualization type: ${layoutPlan.visualizationType || promptAnalysi
 
     await Promise.allSettled(cleanupPromises);
 
-    // Step 8: Database operations
-    const userId = req.user;
-    const project = await prisma.project.create({
-      data: {
-        id: renderResult.animationId,
-        title: prompt,
-        userId: userId,
-        urls: JSON.parse(JSON.stringify(uploadResults)),
-        chatId: Math.random().toString(36).substring(2, 10)
-      },
-    });
-
-
-  let prevEnd = -1;
-// Step 9: Transform videos to MediaFile format and return success response
-const transformedVideos: any = uploadResults.map((video, index) => {
-  const videoDuration = video.duration; // Default duration in seconds - you may want to get actual duration
+    // Step 8: Transform videos to MediaFile format
+let prevEnd = 0;
+const transformedVideos = uploadResults.map((video, index) => {
+  const videoDuration = video.duration; // Duration in seconds
   const startPosition = prevEnd; // Sequential positioning
-  prevEnd = startPosition + video.duration;
-  // index == 0 then sP = 0;
-  // index == 1 then sP = 
+  prevEnd = startPosition + videoDuration;
+  
   return {
     id: `${renderResult.animationId}_${video.sceneName}`,
     fileName: `${video.sceneName}.mp4`,
     fileId: video.key,
-    type: 'video' ,
+    type: 'video',
     startTime: 0, // Start from beginning of source video
     src: video.url,
     endTime: videoDuration, // End of source video
@@ -452,7 +439,7 @@ const transformedVideos: any = uploadResults.map((video, index) => {
     includeInMerge: true,
     playbackSpeed: 1.0,
     volume: 100,
-    zIndex:0,
+    zIndex: 0,
     // Optional visual settings - using defaults
     x: 0,
     y: 0,
@@ -468,6 +455,19 @@ const transformedVideos: any = uploadResults.map((video, index) => {
       height: 540,
     },
   };
+});
+
+// Step 9: Database operations - Create project with mediaFiles
+const userId = req.user;
+const project = await prisma.project.create({
+  data: {
+    id: renderResult.animationId,
+    title: prompt,
+    userId: userId,
+    chatId: Math.random().toString(36).substring(2, 10),
+    mediaFiles: transformedVideos, // Include the transformed videos
+    duration: prevEnd, // Set total project duration
+  },
 });
 
 const response_data = {

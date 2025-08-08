@@ -6,10 +6,7 @@ interface FullScreenLoaderProps {
   variant?: "dots" | "pulse" | "spin" | "wave";
 }
 
-const FullScreenLoader = ({
-  message = "Loading...",
-  variant = "dots",
-}: FullScreenLoaderProps) => {
+const FullScreenLoader = ({ message = "Loading...", variant = "dots" }: FullScreenLoaderProps) => {
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -46,10 +43,7 @@ const FullScreenLoader = ({
       animate="visible"
       exit="exit"
     >
-      <motion.div
-        className="flex flex-col items-center space-y-4"
-        variants={contentVariants}
-      >
+      <motion.div className="flex flex-col items-center space-y-4" variants={contentVariants}>
         <Loader variant={variant} size="lg" />
         <motion.p
           className="text-lg font-medium text-muted-foreground"

@@ -1,0 +1,6 @@
+manim
+importlib-metadata
+numpy
+matplotlib
+pillow
+scipy

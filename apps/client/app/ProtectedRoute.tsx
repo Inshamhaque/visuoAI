@@ -1,4 +1,4 @@
-'use client';
+"use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -14,7 +14,7 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
     } else {
       setLoading(false);
     }
-  }, []);
+  }, [router]);
 
   if (loading) {
     return (
