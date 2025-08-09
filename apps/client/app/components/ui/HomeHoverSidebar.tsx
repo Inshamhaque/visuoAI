@@ -12,6 +12,7 @@ import { addProject } from "@/app/store/slices/projectsSlice";
 import { useAppSelector } from "@/app/store";
 import { setFilesID, setMediaFiles, setTextElements } from "@/app/store/slices/projectSlice";
 
+
 interface SidebarItem {
   icon: React.ComponentType<any>;
   label: string;
@@ -57,6 +58,9 @@ export interface Project {
   lastModified: string; // ISO date string
 }
 
+
+
+
 export const HomeHoverSidebar = () => {
   const [isHovered, setIsHovered] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -70,27 +74,20 @@ export const HomeHoverSidebar = () => {
   useEffect(() => {
     const fetchProjects = async () => {
       try {
-        const token = localStorage.getItem("token")
         const response = await axios.get(`${BACKEND_URL}/user/projects`, {
           headers: {
-            authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
         });
 
         if (response.data.status == 411) {
-          // setProjects([])
-          return toast.error("No projects are there", {
-            position: "top-right",
-          });
-          
+          return toast.error("No projects are there", { position: "top-right" });
         }
-        console.log(response.data.projects);
-        setProjects(response.data.projects)
 
-        // setProjects(response.data.projects);
+        setProjects(response.data.projects);
         setLoading(false);
       } catch (e) {
-        toast.error("Some error occurred while fetching projects", {
+        toast.error('Some error occurred while fetching projects', {
           position: "top-right",
         });
         setError(true);
@@ -105,8 +102,7 @@ export const HomeHoverSidebar = () => {
     const handleMouseMove = (e: MouseEvent) => {
       if (e.clientX <= 10) {
         setIsHovered(true);
-      } else if (e.clientX > 320) {
-        // Increased from 300 to 320 to match width
+      } else if (e.clientX > 320) { // Increased from 300 to 320 to match width
         setIsHovered(false);
       }
     };
@@ -128,24 +124,24 @@ export const HomeHoverSidebar = () => {
           updatedMedia.push(video);
           updatedFiles.push(newID);
         } catch (error) {
-          console.error("Error storing video:", error);
+          console.error('Error storing video:', error);
         }
       }
 
       dispatch(setMediaFiles(updatedMedia));
-
+      
       // Extract text elements from the project
       const projectId = localStorage.getItem("projectId") ?? "";
       const projectStatus = await getProject(projectId);
       const { textElements } = projectStatus;
       dispatch(setTextElements(textElements));
-
+      
       localStorage.setItem("projectId", item.id);
       setIsHovered(false); // Close sidebar after selection
       router.push(`/chat-editor/${item.id}`);
     } catch (error) {
-      console.error("Error loading project:", error);
-      toast.error("Failed to load project");
+      console.error('Error loading project:', error);
+      toast.error('Failed to load project');
     }
   };
 
@@ -166,6 +162,7 @@ export const HomeHoverSidebar = () => {
       >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-slate-600">
+          
           <button
             className="p-2 hover:bg-white/10 rounded-lg transition-colors duration-200"
             onClick={() => setIsHovered(false)}
@@ -193,12 +190,14 @@ export const HomeHoverSidebar = () => {
                     onClick={() => handleProjectClick(item)}
                     className="w-full flex items-center gap-3 p-3 rounded-lg text-left bg-white/5 hover:bg-white/10 transition-all duration-200 text-white font-medium hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-white/20"
                   >
-                    <span className="truncate">{item?.title}</span>
+                    <span className="truncate">{item.title}</span>
                   </button>
                 ))}
               </nav>
             )}
           </div>
+
+          
         </div>
 
         {/* Hover Instruction */}
