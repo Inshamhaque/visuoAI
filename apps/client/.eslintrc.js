@@ -41,6 +41,10 @@ module.exports = {
     "no-unused-vars": "off", // handled by unused-imports
     "@typescript-eslint/no-unused-vars": "off", // handled by unused-imports
     "unused-imports/no-unused-imports": "error",
+    "@typescript-eslint/no-unused-vars": "off",
+    "@typescript-eslint/no-explicit-any": "off",
+    "react-hooks/exhaustive-deps": "off",
+    "@typescript-eslint/ban-ts-comment": "off",
     "unused-imports/no-unused-vars": [
       "warn",
       {

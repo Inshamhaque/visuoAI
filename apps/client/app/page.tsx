@@ -33,7 +33,7 @@ export default function Home() {
     }
 
     // ✅ Device detection
-    const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+    const userAgent = navigator.userAgent || navigator.vendor ;
     if (/android|iphone|ipad|iPod/i.test(userAgent.toLowerCase())) {
       setIsMobile(true);
     }

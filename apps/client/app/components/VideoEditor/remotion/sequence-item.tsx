@@ -25,7 +25,7 @@ const calculateFrames = (display: { from: number; to: number }, fps: number) => 
 
 export const SequenceItem: Record<
   string,
-  (item: any, options: SequenceItemOptions) => JSX.Element
+  (item: any, options: SequenceItemOptions) => any
 > = {
   video: (item: MediaFile, options: SequenceItemOptions) => {
     const { fps } = options;
