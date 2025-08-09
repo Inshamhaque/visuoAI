@@ -11,6 +11,7 @@ import { ProjectState } from "../../types/types";
 import { addProject } from "../../store/slices/projectsSlice";
 import { useAppSelector } from "../../store";
 import { setFilesID, setMediaFiles, setTextElements } from "../../store/slices/projectSlice";
+import { Project } from "./HomeHoverSidebar";
 
 interface SidebarItem {
   icon: React.ComponentType<any>;
@@ -42,7 +43,7 @@ export const OverlaySidebar: React.FC<OverlaySidebarProps> = ({
   setIsOpen,
 }) => {
   const [loading, setLoading] = useState(true);
-  const [projects, setProjects] = useState([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [error, setError] = useState<boolean>(false);
   const router = useRouter();
   const dispatch = useAppDispatch();

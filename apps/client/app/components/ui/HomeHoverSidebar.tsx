@@ -18,10 +18,49 @@ interface SidebarItem {
   href?: string;
 }
 
+export interface Project {
+  id: string;
+  title: string;
+  description: string | null;
+  userId: string;
+  chatId: string;
+  aspectRatio: string;
+  resolution: {
+    width: number;
+    height: number;
+  };
+  fps: number;
+  duration: number;
+  currentTime: number;
+  activeSection: string;
+  activeElement: string | null;
+  activeElementIndex: number;
+  timelineZoom: number;
+  zoomLevel: number;
+  isPlaying: boolean;
+  isMuted: boolean;
+  enableMarkerTracking: boolean;
+  exportSettings: {
+    fps: number;
+    speed: string;
+    format: string;
+    quality: string;
+    resolution: string;
+    includeSubtitles: boolean;
+  };
+  mediaFiles: any[];
+  textElements: any[]; // Can replace `any` with a proper type if structure is known
+  timelineItems: any[];
+  history: any[];
+  future: any[];
+  createdAt: string; // ISO date string
+  lastModified: string; // ISO date string
+}
+
 export const HomeHoverSidebar = () => {
   const [isHovered, setIsHovered] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [projects, setProjects] = useState([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [error, setError] = useState<boolean>(false);
   const router = useRouter();
   const dispatch = useAppDispatch();
@@ -154,7 +193,7 @@ export const HomeHoverSidebar = () => {
                     onClick={() => handleProjectClick(item)}
                     className="w-full flex items-center gap-3 p-3 rounded-lg text-left bg-white/5 hover:bg-white/10 transition-all duration-200 text-white font-medium hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-white/20"
                   >
-                    <span className="truncate">{item.title}</span>
+                    <span className="truncate">{item?.title}</span>
                   </button>
                 ))}
               </nav>
