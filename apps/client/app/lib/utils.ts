@@ -6,4 +6,4 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 // TODO : move this to .env
-export const BACKEND_URL = "http://localhost:3001";
+export const BACKEND_URL = "https://visuoai.onrender.com";
