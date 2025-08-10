@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { BackgroundBeams } from "../ui/background-beams";
 import { toast } from "react-toastify";
+import { BACKEND_URL } from "@/app/lib/utils";
 
 export default function SignupCard() {
   const [formData, setFormData] = useState({
@@ -33,7 +34,7 @@ export default function SignupCard() {
 
     try {
       setLoading(true);
-      const res = await fetch("http://localhost:3001/user/signup", {
+      const res = await fetch(`${BACKEND_URL}/user/signup`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
