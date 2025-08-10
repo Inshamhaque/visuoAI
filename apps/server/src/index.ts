@@ -32,10 +32,7 @@ cron.schedule("18 0 * * *", async () => {
   }
 });
 app.use(cookieParser());
-app.use(cors({
-  origin:'http://localhost:3000',
-  credentials:true
-}));
+app.use(cors());
 app.use(express.json());
 app.use("/user", userRouter);
 app.use("/animation", animationRouter);
@@ -44,6 +41,9 @@ app.use("/processor",processorRoutes);
 app.use("/userProjects",projectRoutes)
 app.get("/health",  (req, res) => {
   res.status(200).send("OK");
+});
+app.head("/health", (req, res) => {
+  res.sendStatus(200);
 });
 app.listen(3001,'0.0.0.0', () => {
   console.log("Server is running on port 3001");
