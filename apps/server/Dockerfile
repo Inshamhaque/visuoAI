@@ -25,7 +25,6 @@ RUN apt-get update && apt-get install -y --fix-missing \
     libgirepository1.0-dev \
     && rm -rf /var/lib/apt/lists/*
 
-
 WORKDIR /app
 
 # Copy package files
@@ -41,15 +40,17 @@ COPY prisma ./prisma/
 RUN npx prisma generate
 
 # Set up Python virtual environment
-RUN python3 -m venv /app/venv
-ENV PATH="/app/venv/bin:$PATH"
+RUN python3 -m venv venv
 
 # Upgrade pip first
-RUN pip install --upgrade pip
+RUN venv/bin/pip install --upgrade pip
 
 # Copy and install Python dependencies
 COPY requirements.txt ./
-RUN pip install -r requirements.txt
+RUN venv/bin/pip install -r requirements.txt
+
+# Verify manim installation
+RUN venv/bin/manim --version
 
 # Copy all server code
 COPY . .
@@ -59,5 +60,5 @@ RUN npm run build
 
 EXPOSE 3001
 
-# Use npm start for production
-CMD ["npm", "start"]
+# Activate virtual environment and then start the Express server
+CMD ["/bin/bash", "-c", "source venv/bin/activate && npm start"]
