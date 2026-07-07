@@ -1,5 +1,4 @@
 "use client";
-import { BackgroundBeams } from "../ui/background-beams";
 import axios from "axios";
 import { BACKEND_URL } from "@/app/lib/utils";
 import { signininput } from "@/app/types/types";
