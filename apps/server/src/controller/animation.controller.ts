@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
+import "dotenv/config";
 import OpenAI from "openai";
 import { runManimCode } from "../services/manimEngine";
-import AWS from "aws-sdk";
 import fs from "fs";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
@@ -12,18 +12,16 @@ import { fixOverlapsInManimCode } from "../services/fixCode";
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import { MediaFile } from "../types";
+import { storeFile, usesAwsStorage } from "../services/storage";
 
 const execAsync = promisify(exec);
 
 const prisma = new PrismaClient();
-const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
-// Configure AWS SDK
-const s3 = new AWS.S3({
-  region: process.env.AWS_REGION,
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+const client = new OpenAI({
+  apiKey: process.env.GROQ_API_KEY,
+  baseURL: "https://api.groq.com/openai/v1",
 });
+const groqModel = process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
 
 interface UploadedVideo {
   sceneName: string;
@@ -154,6 +152,9 @@ export async function createScenes(req: AuthRequest, res: Response) {
   if (!prompt) return res.status(400).json({ error: "Prompt is required" });
 
   try {
+    if (!process.env.GROQ_API_KEY) {
+      return res.status(500).json({ error: "GROQ_API_KEY is not configured" });
+    }
     console.log("user is (from the middleware)", req.user);
     
     // check if the user has not used the free project limit
@@ -178,7 +179,7 @@ export async function createScenes(req: AuthRequest, res: Response) {
     console.log("Generating layout plan for prompt:", prompt);
 
     const layoutResponse = await client.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: groqModel,
       messages: [
         {
           role: "system",
@@ -258,7 +259,7 @@ Focus on:
     const relevantTemplate = getRelevantTemplate(layoutPlan.visualizationType || promptAnalysis.type);
     
     const codeResponse = await client.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: groqModel,
       messages: [
         {
           role: "system",
@@ -353,8 +354,8 @@ Focus on the visualization type: ${layoutPlan.visualizationType || promptAnalysi
       throw new Error("No videos were generated during rendering");
     }
 
-    // Step 6: Upload videos to S3 (same as before)
-    console.log("Starting S3 uploads with duration calculation...");
+    // Step 6: Store rendered videos in the configured backend.
+    console.log(`Starting ${usesAwsStorage() ? "S3" : "local"} video storage with duration calculation...`);
     const uploadPromises = renderResult.videos.map(async (video, index) => {
       try {
         console.log(`Processing video ${index + 1}/${renderResult.videos.length}: ${video.scene}`);
@@ -367,30 +368,15 @@ Focus on the visualization type: ${layoutPlan.visualizationType || promptAnalysi
         const videoDuration = await getVideoDurationWithFFprobe(video.path);
         console.log(`Video ${video.scene} duration: ${videoDuration} seconds`);
 
-        const fileStream = fs.createReadStream(video.path);
         const fileName = `Anibot/${renderResult.animationId}/${video.scene}.mp4`;
-
-        const uploadParams = {
-          Bucket: process.env.S3_BUCKET_NAME!,
-          Key: fileName,
-          Body: fileStream,
-          ContentType: "video/mp4",
-          ACL: "public-read",
-          Metadata: {
-            "animation-id": renderResult.animationId,
-            "scene-name": video.scene,
-            "duration": videoDuration.toString(),
-            "upload-timestamp": new Date().toISOString(),
-          },
-        };
-
-        const uploadResult = await s3.upload(uploadParams).promise();
-        console.log(`Successfully uploaded: ${video.scene} -> ${uploadResult.Location}`);
+        const requestBaseUrl = `${req.protocol}://${req.get("host")}`;
+        const storedFile = await storeFile(video.path, fileName, "video/mp4", requestBaseUrl);
+        console.log(`Successfully stored: ${video.scene} -> ${storedFile.url}`);
 
         return {
           sceneName: video.scene,
-          url: uploadResult.Location,
-          key: uploadResult.Key,
+          url: storedFile.url,
+          key: storedFile.key,
           order: index + 1,
           duration: videoDuration, // Include actual duration
         } as UploadedVideo;
@@ -398,7 +384,7 @@ Focus on the visualization type: ${layoutPlan.visualizationType || promptAnalysi
       } catch (uploadError) {
         console.error(`Failed to upload video ${video.scene}:`, uploadError);
         const errorMessage = uploadError instanceof Error ? uploadError.message : String(uploadError);
-        throw new Error(`Upload failed for scene ${video.scene}: ${errorMessage}`);
+      throw new Error(`File storage failed for scene ${video.scene}: ${errorMessage}`);
       }
     });
 
@@ -472,11 +458,11 @@ const project = await prisma.project.create({
 
 const response_data = {
   success: true,
-  message: "All scenes rendered and uploaded successfully",
+  message: "All scenes rendered and stored successfully",
   animationId: renderResult.animationId,
   videos: transformedVideos, // Now using MediaFile[] format
   totalVideos: transformedVideos.length,
-  s3Path: `Anibot/${renderResult.animationId}/`,
+  storagePath: `Anibot/${renderResult.animationId}/`,
   timestamp: new Date().toISOString(),
   layoutPlan: layoutPlan,
   generatedCode: manimCode,
@@ -502,8 +488,8 @@ res.status(200).json(response_data);
       res.status(408).json({ ...errorResponse, error: "Rendering timeout" });
     } else if (errorMessage.includes("No Scene classes found")) {
       res.status(400).json({ ...errorResponse, error: "Invalid Manim code generated" });
-    } else if (errorMessage.includes("Upload failed")) {
-      res.status(502).json({ ...errorResponse, error: "S3 upload failed" });
+    } else if (errorMessage.includes("File storage failed")) {
+      res.status(502).json({ ...errorResponse, error: "File storage failed" });
     } else {
       res.status(500).json(errorResponse);
     }

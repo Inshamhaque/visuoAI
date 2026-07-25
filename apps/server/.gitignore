@@ -1,3 +1,6 @@
 node_modules
 # Keep environment variables out of version control
 .env
+
+# Local-development rendered media (served at /files while USE_AWS=false)
+storage/

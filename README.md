@@ -12,6 +12,14 @@ VisuoAI is designed to:
 - 🎬 Offer a professional video editing suite in the browser
 - 🤖 Use AI chat to turn natural language into structured animations
 
+## Local development
+
+The server can run without AWS. Copy `apps/server/.env.example` to
+`apps/server/.env`, set a valid `GROQ_API_KEY`, and leave `USE_AWS=false`.
+Rendered media will be written to `apps/server/storage/` and served by the API
+at `http://localhost:3001/files/...`. Copy `apps/client/.env.local.example` to
+`apps/client/.env.local` to point the client at that local API.
+
 ---
 
 ## 🏗️ Architecture & Tech Stack
@@ -195,4 +203,3 @@ If you’re passionate about:
 ---
 
 > **VisuoAI is redefining educational content creation — one animation at a time.
-

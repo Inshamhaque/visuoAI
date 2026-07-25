@@ -1,15 +1,17 @@
+import "dotenv/config";
 import express from "express";
 const app = express();
 import { userRouter } from "./routes/user.routes";
 import cors from "cors";
-import cookieParser from "cookie-parser"
+import cookieParser from "cookie-parser";
 import { animationRouter } from "./routes/animation.routes";
 import { messagesRouter } from "./routes/messages.routes";
 import { authMiddleware } from "./middlewares/auth";
 import { processorRoutes } from "./routes/processor.routes";
-import { projectRoutes } from "./routes/project.routes"
-import cron from "node-cron"
+import { projectRoutes } from "./routes/project.routes";
+import cron from "node-cron";
 import { PrismaClient } from "@prisma/client";
+import { getLocalStorageDirectory, usesAwsStorage } from "./services/storage";
 // health check endpoint
 // endpoints -> user,
 /* 
@@ -21,12 +23,12 @@ import { PrismaClient } from "@prisma/client";
     ...}
   }
 */
-const prisma = new PrismaClient()
+const prisma = new PrismaClient();
 // cron job for pinging db at 12:15 am
 cron.schedule("18 0 * * *", async () => {
   try {
     const users = await prisma.user.findMany();
-    console.log("✅ Daily DB ping successful",users);
+    console.log("✅ Daily DB ping successful", users);
   } catch (error) {
     console.error("❌ Daily DB ping failed", error);
   }
@@ -34,17 +36,20 @@ cron.schedule("18 0 * * *", async () => {
 app.use(cookieParser());
 app.use(cors());
 app.use(express.json());
+app.use("/files", express.static(getLocalStorageDirectory()));
 app.use("/user", userRouter);
 app.use("/animation", animationRouter);
 app.use("/messages", messagesRouter);
-app.use("/processor",processorRoutes);
-app.use("/userProjects",projectRoutes)
-app.get("/health",  (req, res) => {
+app.use("/processor", processorRoutes);
+app.use("/userProjects", projectRoutes);
+app.get("/health", (req, res) => {
   res.status(200).send("OK");
 });
 app.head("/health", (req, res) => {
   res.sendStatus(200);
 });
-app.listen(3001,'0.0.0.0', () => {
-  console.log("Server is running on port 3001");
+app.listen(3001, "0.0.0.0", () => {
+  console.log(
+    `Server is running on port 3001 (${usesAwsStorage() ? "AWS S3" : "local file storage"})`,
+  );
 });
